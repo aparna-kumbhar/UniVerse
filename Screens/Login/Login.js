@@ -1,75 +1,81 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StatusBar,
-  Dimensions,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, StatusBar, Dimensions,
 } from 'react-native';
+import { createStackNavigator } from '@react-navigation/stack';
+import TeacherSidebar from '../Teacher/Dashboard/TeacherSidebar';
+import AdminSidebar from '../Admin/Dashboard/AdminSidebar';
+import CommitteSidebar from '../Committe/Dashboard/CommitteSidebar';
 
 const { width } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailFocused, setEmailFocused] = useState(false);
+const TEACHER_CREDENTIALS = { email: '123', password: '123' };
+const ADMIN_CREDENTIALS   = { email: '1234', password: '1234' };
+const COMMITTE_CREDENTIALS = { email: '12345', password: '12345' };
+
+const LoginStack = createStackNavigator();
+
+// ─── Login form ───────────────────────────────────────────────────────────────
+function LoginScreen({ navigation }) {
+  const [email,           setEmail]           = useState('');
+  const [password,        setPassword]        = useState('');
+  const [emailFocused,    setEmailFocused]    = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const [signInPressed, setSignInPressed] = useState(false);
+  const [signInPressed,   setSignInPressed]   = useState(false);
+  const [error,           setError]           = useState('');
 
   const handleSignIn = () => {
-    console.log('Sign in with:', email, password);
-    // Add your authentication logic here
+    setError('');
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+    if (email === TEACHER_CREDENTIALS.email && password === TEACHER_CREDENTIALS.password) {
+      navigation.replace('TeacherDashboard');
+    } else if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
+      navigation.replace('AdminDashboard');
+    } else if (email === COMMITTE_CREDENTIALS.email && password === COMMITTE_CREDENTIALS.password) {
+      navigation.replace('CommitteDashboard');
+    } else {
+      setError('Invalid email or password');
+      setPassword('');
+    }
   };
 
-  const handleForgotPassword = () => {
-    console.log('Forgot password tapped');
-  };
-
-  const handleJoinCollective = () => {
-    console.log('Join the Collective tapped');
-  };
+  const handleForgotPassword  = () => console.log('Forgot password tapped');
+  const handleJoinCollective  = () => console.log('Join the Collective tapped');
 
   return (
     <KeyboardAvoidingView
       style={styles.keyboardView}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#EEF3F5" />
+      <StatusBar barStyle="dark-content" backgroundColor="#EEF3F5" animated={false} />
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
       >
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.brandTitle}>The Academic Curator</Text>
+          <Text style={styles.brandTitle}>UniVerse</Text>
           <Text style={styles.brandSubtitle}>THE DIGITAL ATELIER</Text>
         </View>
 
-        {/* Card */}
         <View style={styles.card}>
-          {/* Welcome Text */}
           <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeTitle}>Welcome back</Text>
+            <Text style={styles.welcomeTitle}>Welcome back...!</Text>
             <Text style={styles.welcomeSubtext}>
               Please enter your credentials to access the curriculum.
             </Text>
           </View>
 
-          {/* Email Field */}
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>USERNAME OR EMAIL</Text>
             <TextInput
-              style={[
-                styles.input,
-                emailFocused && styles.inputFocused,
-              ]}
+              style={[styles.input, emailFocused && styles.inputFocused]}
               placeholder="curator@atelier.edu"
               placeholderTextColor="#B0BEC5"
               value={email}
@@ -82,22 +88,15 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Password Field */}
           <View style={styles.fieldGroup}>
             <View style={styles.passwordRow}>
               <Text style={styles.fieldLabel}>PASSWORD</Text>
-              <TouchableOpacity
-                onPress={handleForgotPassword}
-                activeOpacity={0.6}
-              >
+              <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.6}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
             <TextInput
-              style={[
-                styles.input,
-                passwordFocused && styles.inputFocused,
-              ]}
+              style={[styles.input, passwordFocused && styles.inputFocused]}
               placeholder="••••••••"
               placeholderTextColor="#B0BEC5"
               value={password}
@@ -110,12 +109,14 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Sign In Button */}
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
           <TouchableOpacity
-            style={[
-              styles.signInButton,
-              signInPressed && styles.signInButtonPressed,
-            ]}
+            style={[styles.signInButton, signInPressed && styles.signInButtonPressed]}
             onPress={handleSignIn}
             onPressIn={() => setSignInPressed(true)}
             onPressOut={() => setSignInPressed(false)}
@@ -124,19 +125,14 @@ export default function LoginScreen() {
             <Text style={styles.signInText}>Sign In  →</Text>
           </TouchableOpacity>
 
-          {/* Join Section */}
           <View style={styles.joinSection}>
             <Text style={styles.joinText}>New to the atelier?{' '}</Text>
-            <TouchableOpacity
-              onPress={handleJoinCollective}
-              activeOpacity={0.6}
-            >
+            <TouchableOpacity onPress={handleJoinCollective} activeOpacity={0.6}>
               <Text style={styles.joinLink}>Join the Collective</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             © 2024 THE ACADEMIC CURATOR • PRIVATE INSTITUTION
@@ -147,12 +143,31 @@ export default function LoginScreen() {
   );
 }
 
+// ─── Root navigator — single stack, no nested containers ─────────────────────
+export default function Login() {
+  return (
+    <LoginStack.Navigator screenOptions={{ headerShown: false }}>
+      {/* ✅ Unique screen name — avoids "same name nested" warning */}
+      <LoginStack.Screen name="LoginScreen"      component={LoginScreen} />
+      <LoginStack.Screen name="TeacherDashboard" component={TeacherSidebar} />
+      <LoginStack.Screen name="AdminDashboard"   component={AdminSidebar} />
+      <LoginStack.Screen name="CommitteDashboard" component={CommitteSidebar} />
+    </LoginStack.Navigator>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const cardMaxWidth = isWeb ? 480 : undefined;
 
 const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
     backgroundColor: '#EEF3F5',
+    ...(isWeb && { minHeight: '100vh' }),
+  },
+  scrollView: {
+    flex: 1,
+    ...(isWeb && { overflow: 'auto' }),
   },
   scrollContainer: {
     flexGrow: 1,
@@ -162,8 +177,6 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     backgroundColor: '#EEF3F5',
   },
-
-  // ─── Header ───────────────────────────────────────────────
   header: {
     alignItems: 'center',
     marginBottom: isWeb ? 48 : 36,
@@ -196,8 +209,6 @@ const styles = StyleSheet.create({
       web: '"Helvetica Neue", Arial, sans-serif',
     }),
   },
-
-  // ─── Card ─────────────────────────────────────────────────
   card: {
     width: '100%',
     maxWidth: cardMaxWidth,
@@ -206,17 +217,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: isWeb ? 40 : 24,
     paddingTop: isWeb ? 40 : 32,
     paddingBottom: isWeb ? 36 : 28,
-    shadowColor: '#1A2F5A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    elevation: 4,
+    ...(isWeb
+      ? { boxShadow: '0px 4px 20px rgba(26, 47, 90, 0.08)' }
+      : {
+          shadowColor: '#1A2F5A',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 20,
+          elevation: 4,
+        }),
   },
-
-  // ─── Welcome ──────────────────────────────────────────────
-  welcomeSection: {
-    marginBottom: 28,
-  },
+  welcomeSection: { marginBottom: 28 },
   welcomeTitle: {
     fontSize: isWeb ? 28 : 24,
     fontWeight: '700',
@@ -238,11 +249,7 @@ const styles = StyleSheet.create({
       web: '"Courier New", Courier, monospace',
     }),
   },
-
-  // ─── Form Fields ──────────────────────────────────────────
-  fieldGroup: {
-    marginBottom: 20,
-  },
+  fieldGroup: { marginBottom: 20 },
   fieldLabel: {
     fontSize: isWeb ? 11 : 10,
     fontWeight: '600',
@@ -292,8 +299,6 @@ const styles = StyleSheet.create({
     }),
     letterSpacing: 0.3,
   },
-
-  // ─── Sign In Button ───────────────────────────────────────
   signInButton: {
     backgroundColor: '#1A2F5A',
     borderRadius: 14,
@@ -302,11 +307,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
     marginBottom: 28,
-    shadowColor: '#1A2F5A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
+    ...(isWeb
+      ? { boxShadow: '0px 4px 10px rgba(26, 47, 90, 0.3)' }
+      : {
+          shadowColor: '#1A2F5A',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 10,
+          elevation: 5,
+        }),
   },
   signInButtonPressed: {
     backgroundColor: '#122248',
@@ -323,8 +332,6 @@ const styles = StyleSheet.create({
       web: 'Georgia, serif',
     }),
   },
-
-  // ─── Join Section ─────────────────────────────────────────
   joinSection: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -351,8 +358,6 @@ const styles = StyleSheet.create({
       web: '"Courier New", Courier, monospace',
     }),
   },
-
-  // ─── Footer ───────────────────────────────────────────────
   footer: {
     marginTop: 32,
     alignItems: 'center',
@@ -367,6 +372,25 @@ const styles = StyleSheet.create({
       ios: 'Helvetica Neue',
       android: 'sans-serif',
       web: '"Helvetica Neue", Arial, sans-serif',
+    }),
+  },
+  errorBox: {
+    backgroundColor: '#FFEBEE',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#E53935',
+  },
+  errorText: {
+    fontSize: isWeb ? 13 : 12,
+    color: '#C62828',
+    fontWeight: '600',
+    fontFamily: Platform.select({
+      ios: 'Courier New',
+      android: 'monospace',
+      web: '"Courier New", Courier, monospace',
     }),
   },
 });

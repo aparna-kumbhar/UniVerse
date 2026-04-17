@@ -5,360 +5,294 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Image,
   Dimensions,
   StatusBar,
+  Image,
   Platform,
-  SafeAreaView,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 768;
-const isLaptop = SCREEN_WIDTH >= 1024;
+const IS_LAPTOP = SCREEN_WIDTH >= 1024;
+const IS_TABLET = SCREEN_WIDTH >= 768 && SCREEN_WIDTH < 1024;
+const IS_WEB = Platform.OS === 'web';
 
-// ─── Color Palette ───────────────────────────────────────────────
+// ─── Color Palette ────────────────────────────────────────────────────────────
 const C = {
-  bg: '#F4F6FB',
-  white: '#FFFFFF',
-  navy: '#1E2A4A',
-  navyLight: '#2E3E6A',
-  teal: '#3ECFCF',
-  tealDark: '#2BB5B5',
-  green: '#4CAF82',
-  amber: '#F5A623',
-  red: '#E05C5C',
-  textPrimary: '#1A1F36',
+  bg: '#F4F3EE',
+  cardBg: '#FFFFFF',
+  navBg: '#FFFFFF',
+  darkCard: '#1A2B3C',
+  accent: '#2ECC8B',
+  accentDark: '#27AE72',
+  textPrimary: '#1A1A2E',
   textSecondary: '#6B7280',
   textMuted: '#9CA3AF',
-  border: '#E5E9F2',
-  cardShadow: 'rgba(30,42,74,0.08)',
-  insightBg: '#1E2A4A',
-  tipBg: '#F0FDF8',
-  tipBorder: '#A7F3D0',
-  purple: '#8B5CF6',
-  purpleLight: '#EDE9FE',
+  textLight: '#FFFFFF',
+  border: '#E5E7EB',
+  tagBg: '#F0FDF4',
+  tagText: '#166534',
+  warningBg: '#FEF9C3',
+  progressBg: '#E5E7EB',
+  progressAlpha: '#2ECC8B',
+  progressBeta: '#2ECC8B',
+  progressGamma: '#2ECC8B',
+  badgeBg: '#ECFDF5',
+  badgeText: '#065F46',
+  tipBg: '#F9FAFB',
+  tipBorder: '#2ECC8B',
 };
 
-// ─── Header ──────────────────────────────────────────────────────
-const Header = () => (
-  <View style={styles.header}>
-    <Text style={styles.headerTitle}>TERMINAL 04</Text>
-    <View style={styles.headerRight}>
-      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-        <Text style={styles.iconText}>🔔</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-        <Text style={styles.iconText}>❓</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.profileBtn} activeOpacity={0.8}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>AT</Text>
-        </View>
-        <View>
-          <Text style={styles.profileName}>Dr. Aris Thorne</Text>
-          <Text style={styles.profileRole}>Senior Faculty</Text>
-        </View>
-      </TouchableOpacity>
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const col = (n, gap = 16) => {
+  const cols = IS_LAPTOP ? 12 : IS_TABLET ? 8 : 4;
+  const totalGap = gap * (cols - 1);
+  const unit = (SCREEN_WIDTH - 32 - totalGap) / cols;
+  return unit * n + gap * (n - 1);
+};
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+const TopBar = () => (
+  <View style={styles.topBar}>
+   
+    <View style={styles.topBarRight}>
+     
+      
+  
     </View>
   </View>
 );
 
-// ─── Welcome Banner ───────────────────────────────────────────────
-const WelcomeBanner = () => (
-  <View style={styles.welcomeCard}>
-    <View style={styles.welcomeLeft}>
-      <Text style={styles.welcomeTitle}>Welcome, Professor Aris</Text>
-      <Text style={styles.welcomeSubtitle}>
-        Curating excellence across 12 active modules today. Your students have
-        shown a 15% increase in engagement this week.
-      </Text>
+const HeroCard = () => (
+  <View style={styles.heroCard}>
+    <View style={styles.heroLeft}>
+      <Text style={styles.heroTitle}>Welcome, Professor Aris</Text>
+     
     </View>
-    <TouchableOpacity style={styles.activeStudentsBtn} activeOpacity={0.8}>
-      <View style={styles.avatarRow}>
-        {['#FF6B6B', '#4ECDC4', '#45B7D1'].map((color, i) => (
+    <View style={styles.heroRight}>
+      <View style={styles.avatarStack}>
+        {['#FFB347', '#87CEEB', '#DDA0DD'].map((color, i) => (
           <View
             key={i}
-            style={[styles.miniAvatar, { backgroundColor: color, marginLeft: i === 0 ? 0 : -8 }]}
-          />
+            style={[styles.stackAvatar, { backgroundColor: color, left: i * 18 }]}
+          >
+            <Text style={styles.stackAvatarText}>{['S', 'T', 'U'][i]}</Text>
+          </View>
         ))}
-        <View style={[styles.miniAvatar, styles.countAvatar, { marginLeft: -8 }]}>
-          <Text style={styles.countText}>+28</Text>
+        <View style={[styles.stackAvatar, styles.stackAvatarCount, { left: 54 }]}>
+          <Text style={styles.stackCountText}>+28</Text>
         </View>
       </View>
-      <Text style={styles.activeStudentsText}>Active Students Online</Text>
-    </TouchableOpacity>
+      <Text style={styles.heroOnline}>Active Students Online</Text>
+    </View>
   </View>
 );
 
-// ─── Stat Card ────────────────────────────────────────────────────
-const StatCard = ({ icon, label, value, accent }) => (
-  <TouchableOpacity
-    style={[styles.statCard, { borderTopColor: accent }]}
-    activeOpacity={0.85}
-  >
-    <View style={[styles.statIcon, { backgroundColor: accent + '20' }]}>
+const StatCard = ({ icon, label, value }) => (
+  <TouchableOpacity activeOpacity={0.75} style={styles.statCard}>
+    <View style={styles.statIcon}>
       <Text style={styles.statIconText}>{icon}</Text>
     </View>
     <Text style={styles.statLabel}>{label}</Text>
-    <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
+    <Text style={styles.statValue}>{value}</Text>
   </TouchableOpacity>
 );
 
-// ─── Lecture Row ──────────────────────────────────────────────────
-const LectureRow = ({ time, ampm, title, location, batch, tag, tagColor }) => (
-  <TouchableOpacity style={styles.lectureRow} activeOpacity={0.8}>
+const LectureCard = ({ time, period, title, venue, batch, tag }) => (
+  <TouchableOpacity activeOpacity={0.75} style={[styles.lectureCard, tag && styles.lectureCardHighlight]}>
     <View style={styles.lectureTime}>
-      <Text style={styles.lectureTimeHour}>{time}</Text>
-      <Text style={styles.lectureTimeAmpm}>{ampm}</Text>
+      <Text style={styles.lectureTimeText}>{time}</Text>
+      <Text style={styles.lectureTimePeriod}>{period}</Text>
     </View>
-    <View style={styles.lectureDivider} />
     <View style={styles.lectureInfo}>
       <Text style={styles.lectureTitle}>{title}</Text>
-      <View style={styles.lectureMetaRow}>
-        {location && <Text style={styles.lectureMeta}>📍 {location}</Text>}
-        {batch && <Text style={styles.lectureMeta}>  • {batch}</Text>}
+      <View style={styles.lectureMeta}>
+        <Text style={styles.lectureMetaText}>📍 {venue}</Text>
+        <Text style={styles.lectureDot}> • </Text>
+        <Text style={styles.lectureMetaText}>{batch}</Text>
       </View>
     </View>
     {tag && (
-      <View style={[styles.lectureTag, { backgroundColor: tagColor + '20', borderColor: tagColor }]}>
-        <Text style={[styles.lectureTagText, { color: tagColor }]}>{tag}</Text>
+      <View style={styles.lectureTag}>
+        <Text style={styles.lectureTagText}>{tag}</Text>
       </View>
     )}
   </TouchableOpacity>
 );
 
-// ─── Progress Bar ─────────────────────────────────────────────────
-const ProgressBar = ({ label, value, color }) => (
+const ProgressBar = ({ label, percent, color }) => (
   <View style={styles.progressRow}>
-    <Text style={styles.progressLabel}>{label}</Text>
-    <View style={styles.progressTrack}>
-      <View style={[styles.progressFill, { width: `${value}%`, backgroundColor: color }]} />
+    <View style={styles.progressLabelRow}>
+      <Text style={styles.progressLabel}>{label}</Text>
+      <Text style={styles.progressPercent}>{percent}%</Text>
     </View>
-    <Text style={[styles.progressValue, { color }]}>{value}%</Text>
+    <View style={styles.progressTrack}>
+      <View style={[styles.progressFill, { width: `${percent}%`, backgroundColor: color || C.accent }]} />
+    </View>
   </View>
 );
 
-// ─── Curator's Insight Card ───────────────────────────────────────
-const CuratorsInsight = () => (
+const InsightCard = () => (
   <View style={styles.insightCard}>
     <View style={styles.insightHeader}>
       <Text style={styles.insightStar}>✦</Text>
-      <Text style={styles.insightTitle}>Curator's Insight</Text>
+      <Text style={styles.insightStarSmall}>✦</Text>
     </View>
-    <Text style={styles.insightText}>
+    <Text style={styles.insightTitle}>Curator's Insight</Text>
+    <Text style={styles.insightBody}>
       "Based on last night's assignment submissions, Batch Alpha 24 is struggling
       with 'Wave-Particle Duality'. Consider using the Asymmetric Drawer for a
       focused deep-dive in today's 9:00 AM session."
     </Text>
-    <TouchableOpacity style={styles.insightBtn} activeOpacity={0.8}>
-      <Text style={styles.insightBtnText}>Apply Strategy →</Text>
+    <TouchableOpacity activeOpacity={0.75} style={styles.insightBtn}>
+      <Text style={styles.insightBtnText}>Apply Strategy  →</Text>
     </TouchableOpacity>
   </View>
 );
 
-// ─── Weekly Tip ───────────────────────────────────────────────────
 const WeeklyTip = () => (
-  <TouchableOpacity style={styles.tipCard} activeOpacity={0.85}>
-    <View style={styles.tipHeader}>
-      <Text style={styles.tipIcon}>💡</Text>
-      <Text style={styles.tipLabel}>WEEKLY TIP</Text>
-    </View>
-    <Text style={styles.tipText}>
+  <View style={styles.tipCard}>
+    <Text style={styles.tipLabel}>💡  WEEKLY TIP</Text>
+    <Text style={styles.tipBody}>
       "The Digital Atelier thrives on pause. Introduce a 2-minute 'silent
       reflection' block midway through virtual sessions to increase content
       retention by 22%."
     </Text>
-  </TouchableOpacity>
+  </View>
 );
 
-// ─── Main Dashboard ───────────────────────────────────────────────
-export default function ProfessorDashboard() {
-  const [activeTab, setActiveTab] = useState('home');
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
-  const renderContent = () => {
-    if (isLaptop || isTablet) {
-      return (
-        <View style={styles.twoCol}>
+export default function Dashboardpage() {
+  return (
+    <View style={styles.root}>
+      <StatusBar barStyle="dark-content" backgroundColor={C.navBg} />
+      <TopBar />
+      
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        
+      >
+        {/* Hero */}
+        <HeroCard />
+
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <StatCard icon="◈" label="ACTIVE BATCHES" value="12" />
+          <StatCard icon="👤" label="TOTAL STUDENTS" value="482" />
+          <StatCard icon="📊" label="AVG. ATTENDANCE" value="94.2%" />
+        </View>
+
+        {/* Content Grid */}
+        <View style={[styles.grid, IS_LAPTOP && styles.gridLaptop]}>
+
           {/* Left Column */}
-          <View style={styles.colLeft}>
-            <WelcomeBanner />
-
-            {/* Stats Row */}
-            <View style={styles.statsRow}>
-              <StatCard icon="📚" label="ACTIVE BATCHES" value="12" accent={C.purple} />
-              <StatCard icon="👥" label="TOTAL STUDENTS" value="482" accent={C.teal} />
-              <StatCard icon="📊" label="AVG. ATTENDANCE" value="94.2%" accent={C.amber} />
+          <View style={[styles.gridLeft, IS_LAPTOP && styles.gridLeftLaptop]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Today's Lectures</Text>
+              <TouchableOpacity activeOpacity={0.7}>
+                <Text style={styles.sectionLink}>Full Calendar  ›</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Today's Lectures */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Today's Lectures</Text>
-                <TouchableOpacity activeOpacity={0.7}>
-                  <Text style={styles.sectionLink}>Full Calendar →</Text>
-                </TouchableOpacity>
-              </View>
-              <LectureRow
-                time="09:00" ampm="AM"
-                title="Advanced Quantum Mechanics"
-                location="Hall B-12" batch="Batch Alpha 24"
-              />
-              <LectureRow
-                time="11:30" ampm="AM"
-                title="Theoretical Epistemology"
-                location="Virtual Session" batch="Batch Gamma-9"
-                tag="Starting soon" tagColor={C.green}
-              />
-              <LectureRow
-                time="02:00" ampm="PM"
-                title="Curriculum Planning Review"
-                location="Faculty Lounge" batch="Department"
-              />
-            </View>
+            <LectureCard
+              time="09:00"
+              period="AM"
+              title="Advanced Quantum Mechanics"
+              venue="Hall B-12"
+              batch="Batch Alpha 24"
+            />
+            <LectureCard
+              time="11:30"
+              period="AM"
+              title="Theoretical Epistemology"
+              venue="Virtual Session"
+              batch="Batch Gamma-9"
+              tag="Starting soon"
+            />
+            <LectureCard
+              time="02:00"
+              period="PM"
+              title="Curriculum Planning Review"
+              venue="Faculty Lounge"
+              batch="Department"
+            />
           </View>
 
           {/* Right Column */}
-          <View style={styles.colRight}>
+          <View style={[styles.gridRight, IS_LAPTOP && styles.gridRightLaptop]}>
             {/* Batch Performance */}
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Batch Performance</Text>
-              <View style={{ marginTop: 16 }}>
-                <ProgressBar label="Alpha 24 · Quantum" value={88} color={C.teal} />
-                <ProgressBar label="Beta 12 · Logic" value={72} color={C.purple} />
-                <ProgressBar label="Gamma-9 · Ethics" value={94} color={C.green} />
-              </View>
+            <View style={styles.perfCard}>
+              <Text style={styles.perfTitle}>Batch Performance</Text>
+              <ProgressBar label="Alpha 24 – Quantum" percent={88} />
+              <ProgressBar label="Beta 12 – Logic" percent={72} color="#60A5FA" />
+              <ProgressBar label="Gamma-9 – Ethics" percent={94} />
             </View>
-            <CuratorsInsight />
+
+            {/* Insight */}
+            <InsightCard />
+
+            {/* Weekly Tip */}
             <WeeklyTip />
           </View>
         </View>
-      );
-    }
-
-    // Mobile layout
-    return (
-      <View>
-        <WelcomeBanner />
-
-        {/* Stats Row */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll}>
-          <StatCard icon="📚" label="ACTIVE BATCHES" value="12" accent={C.purple} />
-          <StatCard icon="👥" label="TOTAL STUDENTS" value="482" accent={C.teal} />
-          <StatCard icon="📊" label="AVG. ATTENDANCE" value="94.2%" accent={C.amber} />
-        </ScrollView>
-
-        {/* Today's Lectures */}
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Lectures</Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.sectionLink}>Full Calendar →</Text>
-            </TouchableOpacity>
-          </View>
-          <LectureRow
-            time="09:00" ampm="AM"
-            title="Advanced Quantum Mechanics"
-            location="Hall B-12" batch="Batch Alpha 24"
-          />
-          <LectureRow
-            time="11:30" ampm="AM"
-            title="Theoretical Epistemology"
-            location="Virtual Session" batch="Batch Gamma-9"
-            tag="Starting soon" tagColor={C.green}
-          />
-          <LectureRow
-            time="02:00" ampm="PM"
-            title="Curriculum Planning Review"
-            location="Faculty Lounge" batch="Department"
-          />
-        </View>
-
-        {/* Batch Performance */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Batch Performance</Text>
-          <View style={{ marginTop: 16 }}>
-            <ProgressBar label="Alpha 24 · Quantum" value={88} color={C.teal} />
-            <ProgressBar label="Beta 12 · Logic" value={72} color={C.purple} />
-            <ProgressBar label="Gamma-9 · Ethics" value={94} color={C.green} />
-          </View>
-        </View>
-
-        <CuratorsInsight />
-        <WeeklyTip />
-      </View>
-    );
-  };
-
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={C.white} />
-      <Header />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderContent()}
       </ScrollView>
-
-      {/* Bottom Tab Bar (mobile only) */}
-      {!isLaptop && (
-        <View style={styles.tabBar}>
-          {[
-            { id: 'home', icon: '🏠', label: 'Home' },
-            { id: 'calendar', icon: '📅', label: 'Calendar' },
-            { id: 'students', icon: '👥', label: 'Students' },
-            { id: 'insights', icon: '✦', label: 'Insights' },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              style={styles.tabItem}
-              activeOpacity={0.7}
-              onPress={() => setActiveTab(tab.id)}
-            >
-              <Text style={styles.tabIcon}>{tab.icon}</Text>
-              <Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>
-                {tab.label}
-              </Text>
-              {activeTab === tab.id && <View style={styles.tabDot} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </SafeAreaView>
+    </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: C.white,
-  },
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-  // Header
-  header: {
+const styles = StyleSheet.create({
+ root: {
+  flex: 1,
+  backgroundColor: C.bg,
+  ...(IS_WEB && {
+    height: '100vh',
+    maxHeight: '100vh',   // ✅ prevents overflow breaking scroll
+    overflow: 'hidden',   // ✅ VERY IMPORTANT
+    display: 'flex',
+    flexDirection: 'column',
+  }),
+},
+
+  // ✅ FIXED: height: 0 forces the flex child to be constrained,
+  // making overflowY: 'auto' actually trigger on laptop/web.
+ scrollView: {
+  flex: 1,
+  ...(IS_WEB && {
+    height: 0,
+    flexGrow: 1,          // ✅ REQUIRED for proper scroll
+    overflowY: 'auto',
+  }),
+},
+
+  // ── Top Bar
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: isLaptop ? 32 : 16,
+    backgroundColor: C.navBg,
+    paddingHorizontal: IS_LAPTOP ? 32 : 16,
     paddingVertical: 12,
-    backgroundColor: C.white,
     borderBottomWidth: 1,
     borderBottomColor: C.border,
     ...Platform.select({
-      ios: { shadowColor: C.cardShadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 4 },
-      android: { elevation: 3 },
+      ios: { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+      android: { elevation: 2 },
     }),
   },
-  headerTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 3,
-    color: C.navy,
+  topBarBrand: {
     fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    fontSize: IS_LAPTOP ? 14 : 12,
+    fontWeight: '700',
+    letterSpacing: 3,
+    color: C.textPrimary,
   },
-  headerRight: {
+  topBarRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -372,327 +306,286 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconText: { fontSize: 16 },
-  profileBtn: {
+  avatarPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingLeft: 8,
+    backgroundColor: C.bg,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 24,
   },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: C.navy,
+  avatarCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: C.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: C.white, fontSize: 12, fontWeight: '700' },
-  profileName: { fontSize: 13, fontWeight: '700', color: C.textPrimary },
-  profileRole: { fontSize: 11, color: C.textSecondary },
+  avatarInitial: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  avatarName: { fontSize: 12, fontWeight: '700', color: C.textPrimary },
+  avatarRole: { fontSize: 10, color: C.textSecondary },
 
-  // Scroll
-  scroll: { flex: 1, backgroundColor: C.bg },
+  // ── Scroll
   scrollContent: {
-    padding: isLaptop ? 32 : 16,
-    paddingBottom: isLaptop ? 32 : 80,
-  },
+  paddingHorizontal: IS_LAPTOP ? 32 : 16,
+  paddingTop: 20,
+  paddingBottom: 40,
+  flexGrow: 1,   // ✅ ensures content expands
+},
 
-  // Two column layout
-  twoCol: {
-    flexDirection: 'row',
-    gap: 24,
-    alignItems: 'flex-start',
-  },
-  colLeft: { flex: 1.4 },
-  colRight: { flex: 1 },
-
-  // Welcome Card
-  welcomeCard: {
-    backgroundColor: C.white,
+  // ── Hero
+  heroCard: {
+    backgroundColor: C.cardBg,
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    flexDirection: isLaptop ? 'row' : 'column',
-    alignItems: isLaptop ? 'center' : 'flex-start',
+    padding: IS_LAPTOP ? 28 : 18,
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
     ...Platform.select({
-      ios: { shadowColor: C.cardShadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12 },
-      android: { elevation: 3 },
+      ios: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+      android: { elevation: 2 },
     }),
   },
-  welcomeLeft: { flex: 1, marginRight: isLaptop ? 16 : 0 },
-  welcomeTitle: {
-    fontSize: isLaptop ? 22 : 18,
+  heroLeft: { flex: 1, paddingRight: 12 },
+  heroTitle: {
+    fontSize: IS_LAPTOP ? 22 : 18,
     fontWeight: '800',
     color: C.textPrimary,
     marginBottom: 6,
   },
-  welcomeSubtitle: {
-    fontSize: 13,
+  heroSubtitle: {
+    fontSize: IS_LAPTOP ? 14 : 13,
     color: C.textSecondary,
     lineHeight: 20,
   },
-  activeStudentsBtn: {
-    marginTop: isLaptop ? 0 : 16,
-    alignItems: 'center',
-    gap: 8,
+  heroRight: { alignItems: 'center', gap: 8 },
+  avatarStack: {
+    width: 100,
+    height: 36,
+    position: 'relative',
   },
-  avatarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  miniAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  stackAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    position: 'absolute',
     borderWidth: 2,
-    borderColor: C.white,
-  },
-  countAvatar: {
-    backgroundColor: C.teal,
+    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countText: { color: C.white, fontSize: 9, fontWeight: '700' },
-  activeStudentsText: { fontSize: 11, color: C.textSecondary, fontWeight: '600' },
+  stackAvatarText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  stackAvatarCount: { backgroundColor: C.accent },
+  stackCountText: { fontSize: 10, fontWeight: '800', color: '#fff' },
+  heroOnline: { fontSize: 11, color: C.textSecondary, textAlign: 'center', marginTop: 4 },
 
-  // Stats
+  // ── Stats
   statsRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 20,
   },
-  statsScroll: { marginBottom: 16 },
   statCard: {
-    flex: isLaptop ? 1 : undefined,
-    width: isLaptop ? undefined : 140,
-    marginRight: isLaptop ? 0 : 12,
-    backgroundColor: C.white,
+    flex: 1,
+    backgroundColor: C.cardBg,
     borderRadius: 14,
-    padding: 16,
-    borderTopWidth: 3,
+    padding: IS_LAPTOP ? 18 : 14,
+    alignItems: 'flex-start',
     ...Platform.select({
-      ios: { shadowColor: C.cardShadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12 },
-      android: { elevation: 2 },
+      ios: { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+      android: { elevation: 1 },
     }),
   },
   statIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
+    backgroundColor: C.tagBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  statIconText: { fontSize: 18 },
+  statIconText: { fontSize: 16 },
   statLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1,
     color: C.textMuted,
     marginBottom: 4,
   },
   statValue: {
-    fontSize: isLaptop ? 26 : 22,
+    fontSize: IS_LAPTOP ? 24 : 20,
     fontWeight: '800',
+    color: C.textPrimary,
   },
 
-  // Section Card
-  sectionCard: {
-    backgroundColor: C.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: { shadowColor: C.cardShadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 12 },
-      android: { elevation: 2 },
-    }),
-  },
+  // ── Grid
+  grid: { gap: 16 },
+  gridLaptop: { flexDirection: 'row', alignItems: 'flex-start' },
+  gridLeft: { gap: 10 },
+  gridLeftLaptop: { flex: 1.4 },
+  gridRight: { gap: 12, marginTop: 0 },
+  gridRightLaptop: { flex: 1 },
+
+  // ── Section Header
   sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: IS_LAPTOP ? 17 : 15,
     fontWeight: '800',
     color: C.textPrimary,
   },
   sectionLink: {
     fontSize: 13,
-    color: C.teal,
+    color: C.accent,
     fontWeight: '600',
   },
 
-  // Lecture Row
-  lectureRow: {
+  // ── Lecture Card
+  lectureCard: {
+    backgroundColor: C.cardBg,
+    borderRadius: 14,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
     gap: 12,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  lectureTime: { width: 44, alignItems: 'center' },
-  lectureTimeHour: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: C.textPrimary,
+  lectureCardHighlight: {
+    borderColor: C.accent,
+    backgroundColor: '#F0FDF9',
   },
-  lectureTimeAmpm: {
-    fontSize: 10,
-    color: C.textMuted,
-    fontWeight: '600',
+  lectureTime: {
+    width: 44,
+    alignItems: 'center',
+    backgroundColor: C.bg,
+    borderRadius: 8,
+    paddingVertical: 6,
   },
-  lectureDivider: {
-    width: 2,
-    height: 36,
-    backgroundColor: C.teal,
-    borderRadius: 2,
-  },
+  lectureTimeText: { fontSize: 14, fontWeight: '800', color: C.textPrimary },
+  lectureTimePeriod: { fontSize: 10, color: C.textMuted, fontWeight: '600' },
   lectureInfo: { flex: 1 },
   lectureTitle: {
-    fontSize: 13,
+    fontSize: IS_LAPTOP ? 15 : 13,
     fontWeight: '700',
     color: C.textPrimary,
     marginBottom: 4,
   },
-  lectureMetaRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  lectureMeta: { fontSize: 11, color: C.textSecondary },
+  lectureMeta: { flexDirection: 'row', alignItems: 'center' },
+  lectureMetaText: { fontSize: 11, color: C.textSecondary },
+  lectureDot: { color: C.textMuted, fontSize: 11 },
   lectureTag: {
+    backgroundColor: C.accent,
+    borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
   },
-  lectureTagText: { fontSize: 10, fontWeight: '700' },
+  lectureTagText: { fontSize: 10, fontWeight: '700', color: '#fff' },
 
-  // Progress Bar
-  progressRow: {
+  // ── Batch Performance
+  perfCard: {
+    backgroundColor: C.cardBg,
+    borderRadius: 16,
+    padding: IS_LAPTOP ? 20 : 16,
+    gap: 14,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+      android: { elevation: 2 },
+    }),
+  },
+  perfTitle: {
+    fontSize: IS_LAPTOP ? 16 : 14,
+    fontWeight: '800',
+    color: C.textPrimary,
+  },
+  progressRow: { gap: 6 },
+  progressLabelRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 14,
+    justifyContent: 'space-between',
   },
-  progressLabel: {
-    flex: 1,
-    fontSize: 12,
-    color: C.textSecondary,
-    fontWeight: '500',
-  },
+  progressLabel: { fontSize: 12, color: C.textSecondary, fontWeight: '500' },
+  progressPercent: { fontSize: 12, fontWeight: '700', color: C.textPrimary },
   progressTrack: {
-    flex: 1,
-    height: 8,
-    backgroundColor: C.border,
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: C.progressBg,
+    borderRadius: 999,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
-  },
-  progressValue: {
-    width: 36,
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'right',
+    borderRadius: 999,
   },
 
-  // Curator's Insight
+  // ── Insight Card
   insightCard: {
-    backgroundColor: C.insightBg,
+    backgroundColor: C.darkCard,
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    padding: IS_LAPTOP ? 22 : 18,
+    gap: 10,
   },
   insightHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 4,
   },
-  insightStar: { fontSize: 18, color: C.teal },
+  insightStar: { fontSize: 18, color: C.accent },
+  insightStarSmall: { fontSize: 10, color: C.accent, alignSelf: 'flex-start', marginTop: 4 },
   insightTitle: {
-    fontSize: 15,
+    fontSize: IS_LAPTOP ? 18 : 16,
     fontWeight: '800',
-    color: C.white,
+    color: '#fff',
   },
-  insightText: {
-    fontSize: 13,
-    color: '#A8B8D8',
-    lineHeight: 20,
-    marginBottom: 16,
+  insightBody: {
+    fontSize: IS_LAPTOP ? 13 : 12,
+    color: '#A0AEC0',
+    lineHeight: 19,
+    fontStyle: 'italic',
   },
   insightBtn: {
     alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: C.accent,
+    marginTop: 4,
   },
   insightBtnText: {
+    color: C.accent,
     fontSize: 13,
     fontWeight: '700',
-    color: C.teal,
   },
 
-  // Weekly Tip
+  // ── Tip Card
   tipCard: {
-    backgroundColor: C.tipBg,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.tipBorder,
-    padding: 20,
-    marginBottom: 16,
-  },
-  tipHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: C.cardBg,
+    borderRadius: 14,
+    padding: IS_LAPTOP ? 18 : 14,
+    borderLeftWidth: 3,
+    borderLeftColor: C.accent,
     gap: 6,
-    marginBottom: 10,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+      android: { elevation: 1 },
+    }),
   },
-  tipIcon: { fontSize: 16 },
   tipLabel: {
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 2,
-    color: C.green,
-  },
-  tipText: {
-    fontSize: 13,
-    color: C.textSecondary,
-    lineHeight: 20,
-  },
-
-  // Bottom Tab Bar
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: C.white,
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    paddingTop: 8,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.06, shadowRadius: 8 },
-      android: { elevation: 8 },
-    }),
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-    position: 'relative',
-  },
-  tabIcon: { fontSize: 20 },
-  tabLabel: {
-    fontSize: 10,
+    letterSpacing: 1.5,
     color: C.textMuted,
-    fontWeight: '600',
   },
-  tabLabelActive: { color: C.navy },
-  tabDot: {
-    position: 'absolute',
-    bottom: -4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.teal,
+  tipBody: {
+    fontSize: IS_LAPTOP ? 13 : 12,
+    color: C.textSecondary,
+    lineHeight: 19,
+    fontStyle: 'italic',
   },
 });

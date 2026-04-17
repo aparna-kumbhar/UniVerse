@@ -6,17 +6,25 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  SafeAreaView,
   StatusBar,
   Platform,
-  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Dashboardpage from './Dashboardpage';
+import Attendancebatch from '../Attendance/Attendancebatch';
+import Notes from '../Notes/Notes';
+import Test from '../Test/Test';
+import Teacherattendance from '../Teacherattendance/Teacherattendance';
+import Marksbatch from '../Marksentry/Marksbatch';
+import Schedule from '../Schedule/Schedule';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = 220;
 const IS_TABLET = SCREEN_WIDTH >= 768;
+const IS_WEB = Platform.OS === 'web';
 
-// ── Icons (SVG-style paths rendered as Unicode / emoji fallbacks) ──────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 const icons = {
   logo: '🎓',
   dashboard: '⊞',
@@ -32,9 +40,13 @@ const icons = {
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: icons.dashboard },
-  { key: 'schedules', label: 'Schedules', icon: icons.schedules },
-  { key: 'batches', label: 'Batches', icon: icons.batches },
-  { key: 'analytics', label: 'Analytics', icon: icons.analytics },
+  { key: 'attendance marking', label: 'Attendance Marking', icon: icons.schedules },
+  { key: 'notes', label: 'Notes', icon: icons.batches },
+  { key: 'test', label: 'Test', icon: icons.analytics },
+  { key: 'teacher attendance', label: 'Teacher Attendance', icon: '📝' },
+  { key: 'marks entry', label: 'Marks Entry', icon: '📊' },
+  { key: 'schedule', label: 'Schedule', icon: '📆' },
+
 ];
 
 const BOTTOM_ITEMS = [
@@ -45,31 +57,45 @@ const BOTTOM_ITEMS = [
 // ── NavItem Component ─────────────────────────────────────────────────────────
 function NavItem({ item, isActive, onPress, collapsed }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const bgAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.timing(bgAnim, {
-      toValue: isActive ? 1 : 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  }, [isActive]);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.94,
-      useNativeDriver: true,
-      speed: 30,
-    }).start();
+ const bgAnim = useRef(new Animated.Value(0)).current;
+useEffect(() => {
+  return () => {
+    bgAnim.stopAnimation();
+    scaleAnim.stopAnimation();
+    bgAnim.setValue(0);     // ✅ reset
+    scaleAnim.setValue(1);  // ✅ reset
   };
+}, []);
 
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 20,
-    }).start();
+useEffect(() => {
+  const animation = Animated.timing(bgAnim, {
+    toValue: isActive ? 1 : 0,
+    duration: 200,
+    useNativeDriver: false,
+  });
+
+  animation.start();
+
+  return () => {
+    animation.stop(); // ✅ important cleanup
   };
+}, [isActive]);
+
+const handlePressIn = () => {
+  scaleAnim.stopAnimation(); // ✅ ADD THIS
+  Animated.spring(scaleAnim, {
+    toValue: 0.94,
+    useNativeDriver: true,
+  }).start();
+};
+
+const handlePressOut = () => {
+  scaleAnim.stopAnimation(); // ✅ ADD THIS
+  Animated.spring(scaleAnim, {
+    toValue: 1,
+    useNativeDriver: true,
+  }).start();
+};
 
   const bgColor = bgAnim.interpolate({
     inputRange: [0, 1],
@@ -89,7 +115,10 @@ function NavItem({ item, isActive, onPress, collapsed }) {
         style={[
           styles.navItem,
           collapsed && styles.navItemCollapsed,
-          { backgroundColor: bgColor, transform: [{ scale: scaleAnim }] },
+          {
+            backgroundColor: bgColor,
+            transform: [{ scale: scaleAnim }],
+          },
         ]}
       >
         <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
@@ -107,7 +136,7 @@ function NavItem({ item, isActive, onPress, collapsed }) {
 }
 
 // ── Sidebar Content ───────────────────────────────────────────────────────────
-function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, onNewSession, onLogout }) {
+function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, onNewSession, onLogoutPress }) {
   return (
     <View style={styles.sidebarInner}>
       {/* Header */}
@@ -132,7 +161,6 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
         )}
       </View>
 
-      {/* Divider */}
       <View style={styles.divider} />
 
       {/* Main Nav */}
@@ -148,7 +176,6 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
         ))}
       </View>
 
-      {/* Spacer */}
       <View style={styles.flex1} />
 
       {/* New Session CTA */}
@@ -161,7 +188,6 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
         {!collapsed && <Text style={styles.newSessionLabel}>New Session</Text>}
       </TouchableOpacity>
 
-      {/* Divider */}
       <View style={styles.divider} />
 
       {/* Bottom Nav */}
@@ -179,7 +205,7 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
 
       {/* User Badge */}
       {!collapsed && (
-        <TouchableOpacity onPress={onLogout} activeOpacity={0.7}>
+        <TouchableOpacity onPress={onLogoutPress} activeOpacity={0.7}>
           <View style={styles.userBadge}>
             <View style={styles.avatarCircle}>
               <Text style={styles.avatarInitials}>AT</Text>
@@ -196,7 +222,7 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
 }
 
 // ── Mobile Drawer Overlay ─────────────────────────────────────────────────────
-function MobileDrawer({ visible, activeKey, onNavPress, onClose, onNewSession, onLogout }) {
+function MobileDrawer({ visible, activeKey, onNavPress, onClose, onNewSession, onLogoutPress }) {
   const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
 
@@ -216,11 +242,10 @@ function MobileDrawer({ visible, activeKey, onNavPress, onClose, onNewSession, o
     ]).start();
   }, [visible]);
 
-  if (!visible && slideAnim._value === -SIDEBAR_WIDTH) return null;
+  if (!visible) return null;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
-      {/* Backdrop */}
       <Animated.View
         style={[styles.overlay, { opacity: overlayAnim }]}
         pointerEvents={visible ? 'auto' : 'none'}
@@ -228,7 +253,6 @@ function MobileDrawer({ visible, activeKey, onNavPress, onClose, onNewSession, o
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
       </Animated.View>
 
-      {/* Drawer */}
       <Animated.View
         style={[styles.mobileDrawer, { transform: [{ translateX: slideAnim }] }]}
       >
@@ -239,7 +263,7 @@ function MobileDrawer({ visible, activeKey, onNavPress, onClose, onNewSession, o
             collapsed={false}
             onToggleCollapse={() => {}}
             onNewSession={() => { onNewSession(); onClose(); }}
-            onLogout={() => { onLogout(); onClose(); }}
+            onLogoutPress={() => { onLogoutPress(); onClose(); }}
           />
         </SafeAreaView>
       </Animated.View>
@@ -282,7 +306,7 @@ function MobileBottomBar({ activeKey, onNavPress, onMenuPress }) {
 }
 
 // ── Main Export ───────────────────────────────────────────────────────────────
-export default function sidebar({ onLogout, navigation }) {
+export default function TeacherSidebar({ navigation }) {
   const [activeKey, setActiveKey] = useState('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -292,18 +316,35 @@ export default function sidebar({ onLogout, navigation }) {
   };
 
   const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    }
-    // Navigate back to Login screen
     navigation?.replace('Login');
+  };
+
+  const renderContent = () => {
+    switch (activeKey) {
+      case 'dashboard':
+        return <Dashboardpage />;
+      case 'attendance marking':
+        return <Attendancebatch />;
+      case 'notes':
+        return <Notes />;
+      case 'test':
+        return <Test />;
+      case 'teacher attendance':
+        return <Teacherattendance/>
+      case 'marks entry':
+        return <Marksbatch />
+      case 'schedule':
+        return <Schedule />
+      default:
+        return <Dashboardpage />;
+    }
   };
 
   // ── TABLET / LAPTOP LAYOUT ──────────────────────────────────────────────────
   if (IS_TABLET) {
     return (
       <SafeAreaView style={styles.tabletRoot}>
-        <StatusBar barStyle="light-content" backgroundColor="#1a2744" />
+        <StatusBar barStyle="light-content" backgroundColor="#1a2744" animated={false} />
 
         {/* Fixed Sidebar */}
         <Animated.View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
@@ -313,14 +354,16 @@ export default function sidebar({ onLogout, navigation }) {
             collapsed={collapsed}
             onToggleCollapse={() => setCollapsed((c) => !c)}
             onNewSession={handleNewSession}
-            onLogout={handleLogout}
+            onLogoutPress={handleLogout}
           />
         </Animated.View>
 
-        {/* Main Content Area (placeholder) */}
+        {/* ✅ FIX: mainContent must allow its children to scroll on web.
+            On web, flex:1 inside a flex row doesn't scroll by default —
+            we need overflow:'hidden' on the container so the child ScrollView
+            gets the correct height and can scroll independently. */}
         <View style={styles.mainContent}>
-          <Text style={styles.contentHint}>← Sidebar Preview</Text>
-          <Text style={styles.contentSub}>Active: {activeKey}</Text>
+          {renderContent()}
         </View>
       </SafeAreaView>
     );
@@ -329,7 +372,7 @@ export default function sidebar({ onLogout, navigation }) {
   // ── MOBILE LAYOUT ───────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.mobileRoot}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f4f6fb" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f4f6fb" animated={false} />
 
       {/* Top Header Bar */}
       <View style={styles.mobileHeader}>
@@ -345,18 +388,13 @@ export default function sidebar({ onLogout, navigation }) {
         </View>
       </View>
 
-      {/* Page Content */}
+      {/* ✅ FIX: mobileMainContent needs flex:1 + overflow:hidden so child pages scroll */}
       <View style={styles.mobileMainContent}>
-        <Text style={styles.contentHint}>Tap ☰ to open sidebar</Text>
-        <Text style={styles.contentSub}>Active: {activeKey}</Text>
+        {renderContent()}
       </View>
 
       {/* Bottom Navigation Bar */}
-      <MobileBottomBar
-        activeKey={activeKey}
-        onNavPress={setActiveKey}
-        onMenuPress={() => setDrawerOpen(true)}
-      />
+     
 
       {/* Slide-out Drawer */}
       <MobileDrawer
@@ -365,7 +403,7 @@ export default function sidebar({ onLogout, navigation }) {
         onNavPress={setActiveKey}
         onClose={() => setDrawerOpen(false)}
         onNewSession={handleNewSession}
-        onLogout={handleLogout}
+        onLogoutPress={handleLogout}
       />
     </SafeAreaView>
   );
@@ -373,7 +411,6 @@ export default function sidebar({ onLogout, navigation }) {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const SIDEBAR_BG = '#1a2744';
-const SIDEBAR_BG_COLLAPSED = '#1a2744';
 const ACCENT = '#4ecdc4';
 const ACCENT_DARK = '#38b2ac';
 const TEXT_PRIMARY = '#ffffff';
@@ -388,24 +425,33 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#f4f6fb',
+    // ✅ FIX: overflow hidden on the root row so each child can scroll independently
+    
   },
   sidebar: {
     width: SIDEBAR_WIDTH,
     backgroundColor: SIDEBAR_BG,
-    shadowColor: '#000',
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 12,
+    // ✅ FIX: sidebar should not scroll horizontally or stretch on web
+    ...(IS_WEB
+      ? { boxShadow: '4px 0px 16px rgba(0,0,0,0.18)', flexShrink: 0 }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 4, height: 0 },
+          shadowOpacity: 0.18,
+          shadowRadius: 16,
+          elevation: 12,
+        }),
   },
   sidebarCollapsed: {
     width: 72,
   },
   mainContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f4f6fb',
+    // ✅ KEY FIX: This is the most important fix for web scrolling.
+    // Without overflow:'hidden', the flex child expands to fit all content
+    // and the inner ScrollView never gets a bounded height to scroll within.
+    
   },
 
   // ── Sidebar Inner ─────────────────────────────────────────────────────────
@@ -534,11 +580,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: ACCENT,
     gap: 10,
-    shadowColor: ACCENT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+    ...(IS_WEB
+      ? { boxShadow: '0px 4px 10px rgba(78,205,196,0.35)' }
+      : {
+          shadowColor: ACCENT,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 10,
+          elevation: 6,
+        }),
   },
   newSessionBtnCollapsed: {
     justifyContent: 'center',
@@ -593,6 +643,8 @@ const styles = StyleSheet.create({
   mobileRoot: {
     flex: 1,
     backgroundColor: '#f4f6fb',
+    // ✅ FIX: Same overflow fix for mobile web layout
+  
   },
   mobileHeader: {
     flexDirection: 'row',
@@ -632,22 +684,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  // ✅ FIX: mobileMainContent needs overflow hidden so inner ScrollViews work
   mobileMainContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // ── Content Placeholder ────────────────────────────────────────────────────
-  contentHint: {
-    fontSize: 16,
-    color: '#8892a4',
-    fontWeight: '500',
-  },
-  contentSub: {
-    fontSize: 13,
-    color: '#b0b8c8',
-    marginTop: 6,
+   
   },
 
   // ── Bottom Bar ────────────────────────────────────────────────────────────
@@ -658,11 +698,15 @@ const styles = StyleSheet.create({
     borderTopColor: '#e8ecf4',
     paddingBottom: Platform.OS === 'ios' ? 20 : 4,
     paddingTop: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 10,
+    ...(IS_WEB
+      ? { boxShadow: '0px -4px 12px rgba(0,0,0,0.06)' }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          elevation: 10,
+        }),
   },
   bottomBarItem: {
     flex: 1,
@@ -704,10 +748,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: SIDEBAR_WIDTH,
     backgroundColor: SIDEBAR_BG,
-    shadowColor: '#000',
-    shadowOffset: { width: 6, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 20,
+    ...(IS_WEB
+      ? { boxShadow: '6px 0px 20px rgba(0,0,0,0.25)' }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 6, height: 0 },
+          shadowOpacity: 0.25,
+          shadowRadius: 20,
+          elevation: 20,
+        }),
   },
 });
