@@ -144,13 +144,19 @@ function InstituteRow({ name, tier, location, timeAgo, onPress }) {
 }
 
 // ─── Main Dashboard Screen ─────────────────────────────────────────────────────
-export default function Maindashboard() {
+export default function Maindashboard({ onViewDirectory, onInstituteClick }) {
   const [activeTab, setActiveTab] = useState('Executive Overview');
   const tabs = ['Executive Overview', 'Institutes', 'Alerts', 'Registration'];
 
   const handleCreateReport = () => alert('Create Report tapped');
   const handleDownloadData = () => alert('Download Data tapped');
-  const handleViewDirectory = () => alert('View Directory tapped');
+  const handleViewDirectory = () => {
+    if (onViewDirectory) {
+      onViewDirectory();
+    } else {
+      alert('View Directory tapped');
+    }
+  };
   const handleActionRequired = () => alert('Action Required tapped');
   const handleScheduleAudit = () => alert('Schedule Audit tapped');
 
@@ -266,21 +272,66 @@ export default function Maindashboard() {
             tier="Tier 1 • Advanced Research Hub"
             location="Singapore"
             timeAgo="2 days ago"
-            onPress={() => alert('Curator Academy South tapped')}
+            onPress={() => {
+              if (onInstituteClick) {
+                onInstituteClick({
+                  id: '1',
+                  name: 'Curator Academy South',
+                  location: 'Singapore',
+                  accreditation: 'Accredited Level III',
+                  joined: 'Joined Jan 2022',
+                  initials: 'CA',
+                  color: '#1D9E75',
+                  bg: '#E1F5EE',
+                  access: ['Student', 'Parent', 'Teacher'],
+                  price: '$49.99/month',
+                });
+              }
+            }}
           />
           <InstituteRow
             name="Heritage Institute"
             tier="Tier 2 • Humanities & Arts"
             location="London, UK"
             timeAgo="5 days ago"
-            onPress={() => alert('Heritage Institute tapped')}
+            onPress={() => {
+              if (onInstituteClick) {
+                onInstituteClick({
+                  id: '2',
+                  name: 'Heritage Institute',
+                  location: 'London, UK',
+                  accreditation: 'Accredited Level V',
+                  joined: 'Joined Aug 2021',
+                  initials: 'HI',
+                  color: '#1e3a5f',
+                  bg: '#E1F5EE',
+                  access: ['Student', 'Teacher'],
+                  price: '$59.99/month',
+                });
+              }
+            }}
           />
           <InstituteRow
             name="Oxford North Collective"
             tier="Tier 1 • Science & Innovation"
             location="Toronto, CA"
             timeAgo="1 week ago"
-            onPress={() => alert('Oxford North Collective tapped')}
+            onPress={() => {
+              if (onInstituteClick) {
+                onInstituteClick({
+                  id: '3',
+                  name: 'Oxford North Collective',
+                  location: 'Toronto, CA',
+                  accreditation: 'Accredited Level I',
+                  joined: 'Joined May 2023',
+                  initials: 'ON',
+                  color: '#534AB7',
+                  bg: '#EEEDFE',
+                  access: ['Student', 'Teacher'],
+                  price: '$44.99/month',
+                });
+              }
+            }}
           />
         </View>
 

@@ -117,8 +117,8 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
         </View>
         {!collapsed && (
           <View style={styles.brandText}>
-            <Text style={styles.brandTitle}>Academic</Text>
-            <Text style={styles.brandSubtitle}>Curator</Text>
+            <Text style={styles.brandTitle}>UniVerse</Text>
+            
           </View>
         )}
         {IS_TABLET && (
@@ -152,14 +152,7 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
       <View style={styles.flex1} />
 
       {/* New Session CTA */}
-      <TouchableOpacity
-        style={[styles.newSessionBtn, collapsed && styles.newSessionBtnCollapsed]}
-        onPress={onNewSession}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.newSessionIcon}>{icons.plus}</Text>
-        {!collapsed && <Text style={styles.newSessionLabel}>New Session</Text>}
-      </TouchableOpacity>
+     
 
       {/* Divider */}
       <View style={styles.divider} />
@@ -338,7 +331,7 @@ export default function sidebar({ onLogout, navigation }) {
         </TouchableOpacity>
         <View style={styles.mobileHeaderBrand}>
           <Text style={styles.logoIcon}>🎓</Text>
-          <Text style={styles.mobileHeaderTitle}>Academic Curator</Text>
+          <Text style={styles.mobileHeaderTitle}>UniVerse</Text>
         </View>
         <View style={styles.avatarCircleSmall}>
           <Text style={styles.avatarInitialsSmall}>AT</Text>

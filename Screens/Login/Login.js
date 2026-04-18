@@ -161,6 +161,10 @@ export default function Login() {
       <LoginStack.Screen name="StudentDashboard" component={StudentSidebar} />
       <LoginStack.Screen name="ParentDashboard" component={Sidebar} />
       <LoginStack.Screen name="CommitteeDashboard" component={CommitteeSidebar} />
+      <LoginStack.Screen name="LoginScreen"      component={LoginScreen} />
+      <LoginStack.Screen name="TeacherDashboard" component={TeacherSidebar} />
+      <LoginStack.Screen name="AdminDashboard"   component={AdminSidebar} />
+      <LoginStack.Screen name="CommitteDashboard" component={CommitteSidebar} />
     </LoginStack.Navigator>
   );
 }

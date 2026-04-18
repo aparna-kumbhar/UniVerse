@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 768;
 const isLaptop = SCREEN_WIDTH >= 1024;
 
 // ─── Color Palette ───────────────────────────────────────────────
@@ -39,24 +38,22 @@ const C = {
   purpleLight: '#EDE9FE',
 };
 
-// ─── Header ──────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
 const Header = () => (
   <View style={styles.header}>
-    <Text style={styles.headerTitle}>TERMINAL 04</Text>
+    <Text style={styles.headerTitle}>UNI VERSE</Text>
     <View style={styles.headerRight}>
-      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.75}>
         <Text style={styles.iconText}>🔔</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-        <Text style={styles.iconText}>❓</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.profileBtn} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.profileBtn} activeOpacity={0.75}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>AT</Text>
+          <Text style={styles.avatarText}>AR</Text>
         </View>
         <View>
-          <Text style={styles.profileName}>Dr. Aris Thorne</Text>
-          <Text style={styles.profileRole}>Senior Faculty</Text>
+          <Text style={styles.profileName}>Prof. Aris</Text>
+          <Text style={styles.profileRole}>Teacher</Text>
         </View>
       </TouchableOpacity>
     </View>
@@ -172,25 +169,21 @@ const WeeklyTip = () => (
 );
 
 // ─── Main Dashboard ───────────────────────────────────────────────
-export default function ProfessorDashboard() {
+export default function Dashboardpage() {
   const [activeTab, setActiveTab] = useState('home');
 
   const renderContent = () => {
-    if (isLaptop || isTablet) {
+    if (isLaptop) {
       return (
         <View style={styles.twoCol}>
-          {/* Left Column */}
           <View style={styles.colLeft}>
             <WelcomeBanner />
-
-            {/* Stats Row */}
             <View style={styles.statsRow}>
               <StatCard icon="📚" label="ACTIVE BATCHES" value="12" accent={C.purple} />
               <StatCard icon="👥" label="TOTAL STUDENTS" value="482" accent={C.teal} />
               <StatCard icon="📊" label="AVG. ATTENDANCE" value="94.2%" accent={C.amber} />
             </View>
 
-            {/* Today's Lectures */}
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Today's Lectures</Text>
@@ -199,27 +192,32 @@ export default function ProfessorDashboard() {
                 </TouchableOpacity>
               </View>
               <LectureRow
-                time="09:00" ampm="AM"
+                time="09:00"
+                ampm="AM"
                 title="Advanced Quantum Mechanics"
-                location="Hall B-12" batch="Batch Alpha 24"
+                location="Hall B-12"
+                batch="Batch Alpha 24"
               />
               <LectureRow
-                time="11:30" ampm="AM"
+                time="11:30"
+                ampm="AM"
                 title="Theoretical Epistemology"
-                location="Virtual Session" batch="Batch Gamma-9"
-                tag="Starting soon" tagColor={C.green}
+                location="Virtual Session"
+                batch="Batch Gamma-9"
+                tag="Starting soon"
+                tagColor={C.green}
               />
               <LectureRow
-                time="02:00" ampm="PM"
+                time="02:00"
+                ampm="PM"
                 title="Curriculum Planning Review"
-                location="Faculty Lounge" batch="Department"
+                location="Faculty Lounge"
+                batch="Department"
               />
             </View>
           </View>
 
-          {/* Right Column */}
           <View style={styles.colRight}>
-            {/* Batch Performance */}
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Batch Performance</Text>
               <View style={{ marginTop: 16 }}>
@@ -235,19 +233,16 @@ export default function ProfessorDashboard() {
       );
     }
 
-    // Mobile layout
     return (
       <View>
         <WelcomeBanner />
 
-        {/* Stats Row */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll}>
           <StatCard icon="📚" label="ACTIVE BATCHES" value="12" accent={C.purple} />
           <StatCard icon="👥" label="TOTAL STUDENTS" value="482" accent={C.teal} />
           <StatCard icon="📊" label="AVG. ATTENDANCE" value="94.2%" accent={C.amber} />
         </ScrollView>
 
-        {/* Today's Lectures */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today's Lectures</Text>
@@ -256,24 +251,30 @@ export default function ProfessorDashboard() {
             </TouchableOpacity>
           </View>
           <LectureRow
-            time="09:00" ampm="AM"
+            time="09:00"
+            ampm="AM"
             title="Advanced Quantum Mechanics"
-            location="Hall B-12" batch="Batch Alpha 24"
+            location="Hall B-12"
+            batch="Batch Alpha 24"
           />
           <LectureRow
-            time="11:30" ampm="AM"
+            time="11:30"
+            ampm="AM"
             title="Theoretical Epistemology"
-            location="Virtual Session" batch="Batch Gamma-9"
-            tag="Starting soon" tagColor={C.green}
+            location="Virtual Session"
+            batch="Batch Gamma-9"
+            tag="Starting soon"
+            tagColor={C.green}
           />
           <LectureRow
-            time="02:00" ampm="PM"
+            time="02:00"
+            ampm="PM"
             title="Curriculum Planning Review"
-            location="Faculty Lounge" batch="Department"
+            location="Faculty Lounge"
+            batch="Department"
           />
         </View>
 
-        {/* Batch Performance */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Batch Performance</Text>
           <View style={{ marginTop: 16 }}>
@@ -294,14 +295,12 @@ export default function ProfessorDashboard() {
       <StatusBar barStyle="dark-content" backgroundColor={C.white} />
       <Header />
       <ScrollView
-        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {renderContent()}
       </ScrollView>
 
-      {/* Bottom Tab Bar (mobile only) */}
       {!isLaptop && (
         <View style={styles.tabBar}>
           {[
@@ -390,11 +389,12 @@ const styles = StyleSheet.create({
   profileName: { fontSize: 13, fontWeight: '700', color: C.textPrimary },
   profileRole: { fontSize: 11, color: C.textSecondary },
 
-  // Scroll
-  scroll: { flex: 1, backgroundColor: C.bg },
+  // ── Scroll
   scrollContent: {
-    padding: isLaptop ? 32 : 16,
-    paddingBottom: isLaptop ? 32 : 80,
+    paddingHorizontal: isLaptop ? 32 : 16,
+    paddingTop: 20,
+    paddingBottom: 40,
+    flexGrow: 1,
   },
 
   // Two column layout

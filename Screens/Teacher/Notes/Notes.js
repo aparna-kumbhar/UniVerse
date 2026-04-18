@@ -10,7 +10,9 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
+  Alert,
 } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_DESKTOP = SCREEN_WIDTH >= 768;
@@ -96,6 +98,7 @@ export default function Notes() {
   const [resourceTitle, setResourceTitle] = useState('');
   const [showBatchDropdown, setShowBatchDropdown] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const sharedProps = {
     selectedBatch, setSelectedBatch,
@@ -104,6 +107,7 @@ export default function Notes() {
     activeFilter, setActiveFilter,
     showBatchDropdown, setShowBatchDropdown,
     showSubjectDropdown, setShowSubjectDropdown,
+    uploadedFiles, setUploadedFiles,
   };
 
   return (
@@ -179,6 +183,7 @@ function MainContent({
   isDesktop,
   showBatchDropdown, setShowBatchDropdown,
   showSubjectDropdown, setShowSubjectDropdown,
+  uploadedFiles, setUploadedFiles,
 }) {
   const wrap = isDesktop
     ? { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 20 }
@@ -199,13 +204,98 @@ function MainContent({
     setShowSubjectDropdown(false);
   };
 
+  const handleBrowseFiles = async () => {
+    closeAll();
+    
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+        copyToCacheDirectory: false,
+      });
+
+      if (result.canceled) return;
+
+      if (result.assets && result.assets.length > 0) {
+        result.assets.forEach(file => {
+          const fileName = file.name;
+          const fileType = fileName.split('.').pop().toUpperCase();
+          
+          // Determine icon based on file type
+          let icon = '📄';
+          let iconBg = '#EEF2FF';
+          
+          if (['PDF'].includes(fileType)) {
+            icon = '📊';
+            iconBg = '#E8F5F1';
+          } else if (['DOCX', 'DOC'].includes(fileType)) {
+            icon = '📄';
+            iconBg = '#EEF2FF';
+          } else if (['PPTX', 'PPT'].includes(fileType)) {
+            icon = '▶️';
+            iconBg = '#FFF3E8';
+          } else if (['XLSX', 'XLS'].includes(fileType)) {
+            icon = '📊';
+            iconBg = '#E8F5F1';
+          }
+          
+          addFileToUploads(fileName, icon, iconBg, resourceTitle);
+        });
+      }
+    } catch (err) {
+      console.error('Error picking file:', err);
+      Alert.alert('Error', 'Failed to pick file. Please try again.');
+    }
+  };
+
+  const addFileToUploads = (fileName, icon, iconBg, title = '') => {
+    const fileExtension = fileName.split('.').pop().toUpperCase();
+    const newFile = {
+      id: Date.now(),
+      name: fileName,
+      title: title || fileName,
+      icon: icon,
+      iconBg: iconBg,
+      tags: [
+        subject.toUpperCase().replace(/ /g, '-'),
+        selectedBatch || 'OPEN ACCESS',
+      ],
+      time: 'Just now',
+      tagColors: [C.tagBg, C.tagGreen],
+      tagTextColors: [C.tagText, C.tagGreenText],
+    };
+
+    setUploadedFiles([newFile, ...uploadedFiles]);
+  };
+
+  const filterFilesBySubject = () => {
+    const allFiles = [...uploadedFiles, ...RECENT_UPLOADS];
+    
+    if (activeFilter === 'ALL') {
+      return allFiles;
+    }
+    
+    return allFiles.filter(item => {
+      const firstTag = item.tags[0] || '';
+      
+      if (activeFilter === 'PHYSICS') {
+        return firstTag.includes('PHYSICS');
+      } else if (activeFilter === 'MATH') {
+        return firstTag.includes('MATH') || firstTag.includes('CALCULUS');
+      } else if (activeFilter === 'CHEMISTRY') {
+        return firstTag.includes('CHEMISTRY') || firstTag.includes('ECON');
+      }
+      
+      return true;
+    });
+  };
+
   return (
     <View style={wrap}>
 
       {/* ── Hero ── */}
       <View style={[styles.heroSection, isDesktop && styles.heroSectionDesktop]}>
         <Text style={[styles.heroTitle, isDesktop && styles.heroTitleDesktop]}>
-          Curate Your Archive
+          Notes & Resources 
         </Text>
         <Text style={styles.heroSub}>
           Distribute learning materials across your active batches with precision and ease.
@@ -308,7 +398,7 @@ function MainContent({
           <Text style={styles.uploadSub}>
             Supported formats: PDF, DOCX, PPTX{'\n'}(Max 25MB)
           </Text>
-          <TouchableOpacity activeOpacity={0.85} style={styles.browseBtn} onPress={closeAll}>
+          <TouchableOpacity activeOpacity={0.85} style={styles.browseBtn} onPress={handleBrowseFiles}>
             <Text style={styles.browseBtnText}>Browse Files</Text>
           </TouchableOpacity>
         </View>
@@ -344,48 +434,46 @@ function MainContent({
             </TouchableOpacity>
           </View>
 
-          {RECENT_UPLOADS.map(item => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.75}
-              style={styles.uploadItem}
-              onPress={closeAll}
-            >
-              <View style={[styles.uploadItemIcon, { backgroundColor: item.iconBg }]}>
-                <Text style={styles.uploadItemIconText}>{item.icon}</Text>
-              </View>
-              <View style={styles.uploadItemInfo}>
-                <Text style={styles.uploadItemName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <View style={styles.tagRow}>
-                  {item.tags.map((tag, ti) => (
-                    <View key={tag} style={[styles.tag, { backgroundColor: item.tagColors[ti] }]}>
-                      <Text style={[styles.tagText, { color: item.tagTextColors[ti] }]}>
-                        {tag}
-                      </Text>
-                    </View>
-                  ))}
+          {filterFilesBySubject().length > 0 ? (
+            filterFilesBySubject().map(item => (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.75}
+                style={styles.uploadItem}
+                onPress={closeAll}
+              >
+                <View style={[styles.uploadItemIcon, { backgroundColor: item.iconBg }]}>
+                  <Text style={styles.uploadItemIconText}>{item.icon}</Text>
                 </View>
-              </View>
-              <Text style={styles.uploadTime}>{item.time}</Text>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.uploadItemInfo}>
+                  {item.title && (
+                    <Text style={styles.uploadItemTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                  )}
+                  <Text style={styles.uploadItemName} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <View style={styles.tagRow}>
+                    {item.tags.map((tag, ti) => (
+                      <View key={tag} style={[styles.tag, { backgroundColor: item.tagColors[ti] }]}>
+                        <Text style={[styles.tagText, { color: item.tagTextColors[ti] }]}>
+                          {tag}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <Text style={styles.uploadTime}>{item.time}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.noFilesText}>No files found for {activeFilter}</Text>
+          )}
         </View>
 
         {/* Storage Card */}
-        <View style={[styles.card, styles.storageCard]}>
-          <Text style={styles.storageLabel}>STORAGE USAGE</Text>
-          <Text style={styles.storageValue}>
-            4.2 GB <Text style={styles.storageTotal}>/ 10 GB</Text>
-          </Text>
-          <View style={styles.storageBarBg}>
-            <View style={[styles.storageBarFill, { width: '42%' }]} />
-          </View>
-          <Text style={styles.storageNote}>
-            You've curated 142 resources this semester.
-          </Text>
-        </View>
+      
       </View>
     </View>
   );
@@ -588,11 +676,14 @@ const styles = StyleSheet.create({
   uploadItemIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   uploadItemIconText: { fontSize: 18 },
   uploadItemInfo: { flex: 1 },
-  uploadItemName: { fontSize: 13, fontWeight: '600', color: C.textPrimary, marginBottom: 5 },
+  uploadItemTitle: { fontSize: 14, fontWeight: '700', color: C.textPrimary, marginBottom: 3 },
+  uploadItemName: { fontSize: 12, fontWeight: '500', color: C.textSecondary, marginBottom: 5 },
   tagRow: { flexDirection: 'row', gap: 5, flexWrap: 'wrap' },
   tag: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 },
   tagText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.3 },
   uploadTime: { fontSize: 10, color: C.textMuted, fontWeight: '500' },
+
+  noFilesText: { fontSize: 13, color: C.textMuted, textAlign: 'center', paddingVertical: 20 },
 
   storageCard: { backgroundColor: C.navy, borderColor: C.navyLight },
   storageLabel: {

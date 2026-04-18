@@ -230,7 +230,7 @@ async function readPDFWithModernAPI(fileUri) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function Testcreation() {
+export default function Testcreation({ navigation, onTestCreated, isEditMode, testData }) {
   const [questionType, setQuestionType] = useState('Multiple Choice');
   const [points, setPoints] = useState('10');
   const [prompt, setPrompt] = useState('');
@@ -239,6 +239,21 @@ export default function Testcreation() {
   const [loading, setLoading] = useState(false);
   const [showParserModal, setShowParserModal] = useState(false);
   const [parsedQuestions, setParsedQuestions] = useState([]);
+  const [savedQuestions, setSavedQuestions] = useState([]);
+
+  // Load existing questions when in edit mode
+  React.useEffect(() => {
+    if (isEditMode && testData) {
+      // If testData has questionsArray, load them as saved questions
+      if (testData.questionsArray && Array.isArray(testData.questionsArray)) {
+        setSavedQuestions(testData.questionsArray);
+      }
+      // Set form data from test
+      setPrompt(testData.title || '');
+      setQuestionType(testData.questionType || 'Multiple Choice');
+      setPoints(String(testData.points || 10));
+    }
+  }, [isEditMode, testData]);
 
   const handleSelect = (id) => {
     setOptions((prev) => prev.map((o) => ({ ...o, isCorrect: o.id === id })));
@@ -273,6 +288,39 @@ export default function Testcreation() {
     });
   };
 
+  const handleSaveAndAddNext = () => {
+    // Validate at least 2 options have text
+    const validOptions = options.filter(opt => opt.text.trim().length > 0);
+    if (validOptions.length < 2) {
+      Alert.alert('Invalid', 'Please add at least 2 valid options');
+      return;
+    }
+    
+    const hasCorrectAnswer = options.some(opt => opt.isCorrect && opt.text.trim().length > 0);
+    if (!hasCorrectAnswer) {
+      Alert.alert('Invalid', 'Please select a correct answer');
+      return;
+    }
+
+    const newQuestion = {
+      id: Date.now().toString(),
+      questionType,
+      points: parseInt(points),
+      prompt,
+      options: options.filter(opt => opt.text.trim().length > 0),
+    };
+
+    setSavedQuestions(prev => [...prev, newQuestion]);
+    
+    // Reset form for next question
+    setPrompt('');
+    setOptions(INITIAL_OPTIONS);
+    setPoints('10');
+    setQuestionType('Multiple Choice');
+    
+    Alert.alert('Success', `Question saved! (${savedQuestions.length + 1} total)`);
+  };
+
   const handleCreateTest = () => {
     // Validate at least 2 options have text
     const validOptions = options.filter(opt => opt.text.trim().length > 0);
@@ -287,19 +335,57 @@ export default function Testcreation() {
       return;
     }
 
-    const newTest = {
+    const currentQuestion = {
       id: Date.now().toString(),
       questionType,
-      points,
+      points: parseInt(points),
       prompt,
       options: options.filter(opt => opt.text.trim().length > 0),
     };
+
+    // Include current question plus all saved questions
+    const allQuestions = [...savedQuestions, currentQuestion];
+
+    const newTest = {
+      id: isEditMode ? testData.id : Date.now().toString(),
+      title: prompt || 'Untitled Assessment',
+      questionType,
+      points: parseInt(points),
+      prompt,
+      questions: allQuestions.length,
+      questionsArray: allQuestions, // Store full questions for editing
+      status: isEditMode ? testData.status : 'DRAFT',
+      date: isEditMode ? testData.date : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      author: isEditMode ? testData.author : 'Current Teacher',
+      emoji: isEditMode ? testData.emoji : '❓',
+    };
+
     setRepositories((prev) => [...prev, newTest]);
-    setPrompt('');
-    setOptions(INITIAL_OPTIONS);
-    setPoints('10');
-    setQuestionType('Multiple Choice');
-    Alert.alert('Success', 'Test created successfully!');
+    
+    // Navigate back with new test
+    if (navigation && navigation.navigate) {
+      if (isEditMode) {
+        Alert.alert('Success', `Test updated with ${allQuestions.length} question(s)!`);
+        navigation.goBack();
+      } else {
+        navigation.navigate('TestHome', { newTest });
+      }
+    } else if (onTestCreated) {
+      onTestCreated(newTest);
+    }
+    
+    // Reset form only if not in edit mode
+    if (!isEditMode) {
+      setPrompt('');
+      setOptions(INITIAL_OPTIONS);
+      setPoints('10');
+      setQuestionType('Multiple Choice');
+      setSavedQuestions([]);
+    }
+    
+    if (!isEditMode) {
+      Alert.alert('Success', `Test created with ${allQuestions.length} question(s)!`);
+    }
   };
 
   const handleImportPDF = async () => {
@@ -356,7 +442,7 @@ export default function Testcreation() {
 
   return (
     <View style={styles.safe}>
-      <View style={styles.topNav} />
+      
       
       <View style={styles.body}>
         <ScrollView
@@ -365,9 +451,11 @@ export default function Testcreation() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.pageHeader}>
-            <Text style={styles.pageTitle}>Add Question</Text>
+            <Text style={styles.pageTitle}>{isEditMode ? 'Edit Question' : 'Add Question'}</Text>
             <Text style={styles.pageSubtitle}>
-              Create a new assessment item for the upcoming JEE Mock Test.
+              {isEditMode 
+                ? 'Update test questions and details'
+                : 'Create a new assessment item for the upcoming JEE Mock Test.'}
             </Text>
           </View>
           
@@ -440,12 +528,44 @@ export default function Testcreation() {
             <Text style={styles.optionCountText}>{options.length} / 10 options</Text>
           </View>
 
+          {/* Saved Questions Display */}
+          {savedQuestions.length > 0 && (
+            <View style={styles.savedQuestionsSection}>
+              <View style={styles.savedQuestionsHeader}>
+                <Text style={styles.savedQuestionsTitle}>
+                  Saved Questions ({savedQuestions.length})
+                </Text>
+              </View>
+              {savedQuestions.map((q, idx) => (
+                <View key={q.id} style={styles.savedQuestionItem}>
+                  <View style={styles.savedQuestionNumber}>
+                    <Text style={styles.savedQuestionNumberText}>{idx + 1}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.savedQuestionPrompt} numberOfLines={1}>{q.prompt}</Text>
+                    <View style={styles.savedQuestionMeta}>
+                      <Text style={styles.savedQuestionMetaText}>{q.questionType}</Text>
+                      <Text style={styles.savedQuestionDot}>•</Text>
+                      <Text style={styles.savedQuestionMetaText}>{q.options?.length || 0} options</Text>
+                      <Text style={styles.savedQuestionDot}>•</Text>
+                      <Text style={styles.savedQuestionMetaText}>{q.points} pts</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
           <View style={styles.actions}>
             <TouchableOpacity style={styles.previewBtn} activeOpacity={0.7}>
               <Text style={{ fontSize: 13, color: C.textSec }}>👁 Preview Question</Text>
             </TouchableOpacity>
             <View style={styles.actionRight}>
-              <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.8}>
+              <TouchableOpacity 
+                style={styles.btnSecondary} 
+                activeOpacity={0.8}
+                onPress={handleSaveAndAddNext}
+              >
                 <Text style={{ fontSize: 13, color: C.text }}>Save & Add Next</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -453,7 +573,9 @@ export default function Testcreation() {
                 activeOpacity={0.8}
                 onPress={handleCreateTest}
               >
-                <Text style={{ fontSize: 13, color: '#fff', fontWeight: '500' }}>Create the test</Text>
+                <Text style={{ fontSize: 13, color: '#fff', fontWeight: '500' }}>
+                  {isEditMode ? 'Update Test' : 'Create the test'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -573,4 +695,75 @@ const styles = StyleSheet.create({
   extractedOption: { fontSize: 12, color: C.textSec, paddingVertical: 2 },
   extractedCorrectOption: { color: C.green, fontWeight: '500' },
   optionCountBadge: { fontSize: 10, color: C.textTert, marginTop: 4, fontStyle: 'italic' },
+  
+  // Saved Questions Section
+  savedQuestionsSection: {
+    backgroundColor: C.greenLight,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: C.greenBorder,
+  },
+  savedQuestionsHeader: {
+    marginBottom: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: C.greenBorder,
+  },
+  savedQuestionsTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.green,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  savedQuestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: C.greenBorder,
+  },
+  savedQuestionNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: C.green,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  savedQuestionNumberText: {
+    color: C.white,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  savedQuestionPrompt: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.text,
+    marginBottom: 3,
+  },
+  savedQuestionMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  savedQuestionMetaText: {
+    fontSize: 10,
+    color: C.textSec,
+  },
+  savedQuestionDot: {
+    color: C.textSec,
+    marginHorizontal: 2,
+  },
+  removeQuestionBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fee2e2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

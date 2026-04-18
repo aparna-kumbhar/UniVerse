@@ -5,7 +5,11 @@ import {
   ScrollView, StatusBar, Platform,
 } from 'react-native';
 import Maindashboard from './Maindashboard';
+<<<<<<< HEAD:Screens/Committe/Dashboard/CommitteeSidebar.js
 import Permissions from '../Permissions/Permission';
+=======
+import AddInstitute from '../AddInstitute/AddInstitute';
+>>>>>>> 9956b81142cb2c1a1feb9c0ccac04b38dee156df:Screens/Committe/Dashboard/CommitteSidebar.js
 
 // ─── constants ───────────────────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -15,7 +19,11 @@ const IS_LAPTOP = SCREEN_W >= 1024;
 const NAV_ITEMS = [
   { key: 'Dashboard',    icon: '▦' },
   { key: 'Add Institutes',   icon: '▣' },
+<<<<<<< HEAD:Screens/Committe/Dashboard/CommitteeSidebar.js
   { key: 'Permissions', icon: '⊞' },
+=======
+  { key: 'Registration', icon: '⊞' },
+>>>>>>> 9956b81142cb2c1a1feb9c0ccac04b38dee156df:Screens/Committe/Dashboard/CommitteSidebar.js
   { key: 'Settings',     icon: '⚙' },
 ];
 
@@ -102,6 +110,7 @@ const Sidebar = ({ navigation, activeRoute, slideAnim, onClose }) => {
 const CommitteSidebar = () => {
   const [activeRoute, setActiveRoute] = useState('Dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(IS_LAPTOP);
+  const [selectedInstitute, setSelectedInstitute] = useState(null);
   const slideAnim = useRef(new Animated.Value(IS_LAPTOP ? 1 : 0)).current;
 
   const openSidebar = () => {
@@ -140,11 +149,30 @@ const CommitteSidebar = () => {
       {/* Content + Sidebar */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
         {/* Sidebar rendered on left side */}
+        <View style={{ flex: 1 }}>
+          {activeRoute === 'Dashboard' ? (
+            <Maindashboard 
+              onViewDirectory={() => setActiveRoute('Add Institutes')}
+              onInstituteClick={(institute) => {
+                setActiveRoute('Add Institutes');
+                setSelectedInstitute(institute);
+              }}
+            />  
+          ) : activeRoute === 'Add Institutes' ? (
+            <AddInstitute onInstituteClick={setSelectedInstitute} selectedInstitute={selectedInstitute} />
+          ) : (
+            <PlaceholderScreen route={{ name: activeRoute }} />
+          )}
+          
+        </View>
+
+        {/* Sidebar rendered on top of content */}
         {(sidebarOpen || IS_LAPTOP) && (
           <Sidebar
             navigation={{
               navigate: (key) => {
                 setActiveRoute(key);
+                setSelectedInstitute(null);
                 if (!IS_LAPTOP) closeSidebar();
               },
             }}
