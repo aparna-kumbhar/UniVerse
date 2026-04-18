@@ -5,12 +5,13 @@ import {
 } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import StudentSidebar from '../student/Dashboard/sidebar';
-import Sidebar from '../Parent/Dashboard/sidebar'
-const { width } = Dimensions.get('window');
+import Sidebar from '../Parent/Dashboard/sidebar';
+import CommitteeSidebar from '../Committe/Dashboard/CommitteeSidebar';
 const isWeb = Platform.OS === 'web';
 
 const STUDENT_CREDENTIALS = { email: '123', password: '123' };
 const PARENT_CREDENTIALS = { email: 'parent@123', password: 'parent123' };
+const Committee_CREDENTIALS = { email: '12345', password: '12345' };
 const LoginStack = createStackNavigator();
 
 // ─── The actual login form ────────────────────────────────────────────────────
@@ -30,6 +31,7 @@ function LoginScreen({ navigation }) {
     }
     const isStudent = email === STUDENT_CREDENTIALS.email && password === STUDENT_CREDENTIALS.password;
     const isParent = email === PARENT_CREDENTIALS.email && password === PARENT_CREDENTIALS.password;
+    const isCommittee = email === Committee_CREDENTIALS.email && password === Committee_CREDENTIALS.password;
 
     if (isStudent) {
       navigation.replace('StudentDashboard');
@@ -38,6 +40,11 @@ function LoginScreen({ navigation }) {
 
     if (isParent) {
       navigation.replace('ParentDashboard');
+      return;
+    }
+
+    if (isCommittee) {
+      navigation.replace('CommitteeDashboard');
       return;
     }
 
@@ -153,6 +160,7 @@ export default function Login() {
       <LoginStack.Screen name="LoginScreen" component={LoginScreen} />
       <LoginStack.Screen name="StudentDashboard" component={StudentSidebar} />
       <LoginStack.Screen name="ParentDashboard" component={Sidebar} />
+      <LoginStack.Screen name="CommitteeDashboard" component={CommitteeSidebar} />
     </LoginStack.Navigator>
   );
 }
