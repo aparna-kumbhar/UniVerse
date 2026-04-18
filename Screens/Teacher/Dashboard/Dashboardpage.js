@@ -40,25 +40,7 @@ const C = {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const Header = () => (
-  <View style={styles.header}>
-    <Text style={styles.headerTitle}>UNI VERSE</Text>
-    <View style={styles.headerRight}>
-      <TouchableOpacity style={styles.iconBtn} activeOpacity={0.75}>
-        <Text style={styles.iconText}>🔔</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.profileBtn} activeOpacity={0.75}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>AR</Text>
-        </View>
-        <View>
-          <Text style={styles.profileName}>Prof. Aris</Text>
-          <Text style={styles.profileRole}>Teacher</Text>
-        </View>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
+
 
 // ─── Welcome Banner ───────────────────────────────────────────────
 const WelcomeBanner = () => (
@@ -293,7 +275,7 @@ export default function Dashboardpage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={C.white} />
-      <Header />
+    
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -301,30 +283,7 @@ export default function Dashboardpage() {
         {renderContent()}
       </ScrollView>
 
-      {!isLaptop && (
-        <View style={styles.tabBar}>
-          {[
-            { id: 'home', icon: '🏠', label: 'Home' },
-            { id: 'calendar', icon: '📅', label: 'Calendar' },
-            { id: 'students', icon: '👥', label: 'Students' },
-            { id: 'insights', icon: '✦', label: 'Insights' },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              style={styles.tabItem}
-              activeOpacity={0.7}
-              onPress={() => setActiveTab(tab.id)}
-            >
-              <Text style={styles.tabIcon}>{tab.icon}</Text>
-              <Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>
-                {tab.label}
-              </Text>
-              {activeTab === tab.id && <View style={styles.tabDot} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </SafeAreaView>
+     </SafeAreaView>
   );
 }
 

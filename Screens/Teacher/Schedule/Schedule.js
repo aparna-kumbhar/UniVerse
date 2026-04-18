@@ -264,35 +264,25 @@ function WeekGrid({ isDesktop }) {
 export default function Schedule() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
-  const [activeNav, setActiveNav] = useState('Weekly Schedule');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={C.white} />
 
       {/* Top Bar (always visible) */}
-      <TopBar />
+   
 
-      <View style={styles.bodyRow}>
+      
         {/* Sidebar – always shown on desktop, drawer on mobile */}
-        {isDesktop ? (
-          <Sidebar active={activeNav} onSelect={setActiveNav} isDesktop />
-        ) : sidebarOpen ? (
-          <>
-            <TouchableOpacity style={styles.overlay} onPress={() => setSidebarOpen(false)} activeOpacity={1} />
-            <Sidebar active={activeNav} onSelect={(i) => { setActiveNav(i); setSidebarOpen(false); }} isDesktop={false} />
-          </>
-        ) : null}
-
-        {/* Main Content */}
-        <ScrollView style={styles.main} contentContainerStyle={styles.mainContent} showsVerticalScrollIndicator={false}>
+       <View style={{ flex: 1 }}>
+  <ScrollView
+    style={styles.main}
+    contentContainerStyle={styles.mainContent}
+    showsVerticalScrollIndicator={false}
+  >
           {/* Mobile menu toggle */}
-          {!isDesktop && (
-            <TouchableOpacity style={styles.menuToggle} onPress={() => setSidebarOpen(true)} activeOpacity={0.7}>
-              
-            </TouchableOpacity>
-          )}
+      
 
           {/* Header */}
           <View style={styles.pageHeader}>

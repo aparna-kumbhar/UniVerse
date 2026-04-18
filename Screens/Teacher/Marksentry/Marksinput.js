@@ -333,6 +333,7 @@ const EnterMarksScreen = () => {
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -348,6 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: BG_CARD,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
+    marginTop: 15,
   },
   menuBtn: {
     gap: 5,

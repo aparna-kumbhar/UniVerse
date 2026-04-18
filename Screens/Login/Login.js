@@ -7,11 +7,16 @@ import { createStackNavigator } from '@react-navigation/stack';
 import StudentSidebar from '../student/Dashboard/sidebar';
 import Sidebar from '../Parent/Dashboard/sidebar';
 import CommitteeSidebar from '../Committe/Dashboard/CommitteeSidebar';
+import TeacherSidebar from '../Teacher/Dashboard/sidebar';
+import AdminSidebar from '../Admin/Dashboard/AdminSidebar';
 const isWeb = Platform.OS === 'web';
 
 const STUDENT_CREDENTIALS = { email: '123', password: '123' };
 const PARENT_CREDENTIALS = { email: 'parent@123', password: 'parent123' };
 const Committee_CREDENTIALS = { email: '12345', password: '12345' };
+const TEACHER_CREDENTIALS = { email: 't', password: 't' };
+const Admin_CREDENTIALS = { email: 'a', password: 'a' };
+
 const LoginStack = createStackNavigator();
 
 // ─── The actual login form ────────────────────────────────────────────────────
@@ -32,6 +37,8 @@ function LoginScreen({ navigation }) {
     const isStudent = email === STUDENT_CREDENTIALS.email && password === STUDENT_CREDENTIALS.password;
     const isParent = email === PARENT_CREDENTIALS.email && password === PARENT_CREDENTIALS.password;
     const isCommittee = email === Committee_CREDENTIALS.email && password === Committee_CREDENTIALS.password;
+    const isTeacher = email === TEACHER_CREDENTIALS.email && password === TEACHER_CREDENTIALS.password;
+    const isAdmin = email === Admin_CREDENTIALS.email && password === Admin_CREDENTIALS.password;
 
     if (isStudent) {
       navigation.replace('StudentDashboard');
@@ -45,6 +52,16 @@ function LoginScreen({ navigation }) {
 
     if (isCommittee) {
       navigation.replace('CommitteeDashboard');
+      return;
+    }
+
+    if (isTeacher) {
+      navigation.replace('TeacherDashboard');
+      return;
+    }
+
+    if (isAdmin) {
+      navigation.replace('AdminDashboard');
       return;
     }
 
@@ -161,10 +178,8 @@ export default function Login() {
       <LoginStack.Screen name="StudentDashboard" component={StudentSidebar} />
       <LoginStack.Screen name="ParentDashboard" component={Sidebar} />
       <LoginStack.Screen name="CommitteeDashboard" component={CommitteeSidebar} />
-      <LoginStack.Screen name="LoginScreen"      component={LoginScreen} />
       <LoginStack.Screen name="TeacherDashboard" component={TeacherSidebar} />
       <LoginStack.Screen name="AdminDashboard"   component={AdminSidebar} />
-      <LoginStack.Screen name="CommitteDashboard" component={CommitteSidebar} />
     </LoginStack.Navigator>
   );
 }

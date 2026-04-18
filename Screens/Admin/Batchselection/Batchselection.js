@@ -108,7 +108,7 @@ const TeacherSelectionModal = ({ visible, onClose, onSelectTeacher, currentTeach
           Animated.timing(slideAnim, {
             toValue: Dimensions.get('window').height,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start(() => {
             onClose();
             slideAnim.setValue(0);
@@ -118,7 +118,7 @@ const TeacherSelectionModal = ({ visible, onClose, onSelectTeacher, currentTeach
           Animated.timing(slideAnim, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start();
         }
       },
@@ -131,13 +131,13 @@ const TeacherSelectionModal = ({ visible, onClose, onSelectTeacher, currentTeach
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
     } else {
       Animated.timing(slideAnim, {
         toValue: Dimensions.get('window').height,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
     }
   }, [visible]);
@@ -357,7 +357,7 @@ const ManageAllotmentScreen = ({ navigation, route }) => {
           Animated.timing(slideAnim, {
             toValue: Dimensions.get('window').height,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start(() => {
             setShowDrawer(false);
           });
@@ -366,14 +366,14 @@ const ManageAllotmentScreen = ({ navigation, route }) => {
           Animated.timing(slideAnim, {
             toValue: -Dimensions.get('window').height * 0.5,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start();
         } else {
           // Snap back to default position
           Animated.timing(slideAnim, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start();
         }
       },
@@ -393,7 +393,7 @@ const ManageAllotmentScreen = ({ navigation, route }) => {
         Animated.timing(slideAnim, {
           toValue: Dimensions.get('window').height,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start(() => {
           setShowDrawer(false);
         });
@@ -408,7 +408,7 @@ const ManageAllotmentScreen = ({ navigation, route }) => {
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
     }
   };

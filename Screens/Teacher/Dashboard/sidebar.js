@@ -9,8 +9,14 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
-  Image,
 } from 'react-native';
+import Dashboardpage from './Dashboardpage';
+import Schedule from '../Schedule/Schedule';
+import Attendancebatch from '../Attendance/Attendancebatch';
+import Marksbatch from '../Marksentry/Marksbatch';
+import Notes from '../Notes/Notes';
+import Test from '../Test/Test';
+import Teacherattendance from '../Teacherattendance/Teacherattendance';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = 220;
@@ -20,9 +26,12 @@ const IS_TABLET = SCREEN_WIDTH >= 768;
 const icons = {
   logo: '🎓',
   dashboard: '⊞',
-  schedules: '📅',
-  batches: '👥',
-  analytics: '📈',
+  schedules: '🗓️',
+  attendance: '📅',
+  marks: '📊',
+  notes: '📝',
+  tests: '🧪',
+  teacherAttendance: '✅',
   settings: '⚙️',
   support: '❓',
   menu: '☰',
@@ -32,9 +41,12 @@ const icons = {
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: icons.dashboard },
-  { key: 'schedules', label: 'Schedules', icon: icons.schedules },
-  { key: 'batches', label: 'Batches', icon: icons.batches },
-  { key: 'analytics', label: 'Analytics', icon: icons.analytics },
+  { key: 'schedules', label: 'Schedule', icon: icons.schedules },
+  { key: 'attendance', label: 'Attendance', icon: icons.attendance },
+  { key: 'marks', label: 'Marks Entry', icon: icons.marks },
+   { key: 'notes', label: 'Notes', icon: icons.notes },
+  { key: 'tests', label: 'Test', icon: icons.tests },
+  { key: 'teacherAttendance', label: 'Teacher Attendance', icon: icons.teacherAttendance },
 ];
 
 const BOTTOM_ITEMS = [
@@ -58,7 +70,7 @@ function NavItem({ item, isActive, onPress, collapsed }) {
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.94,
-      useNativeDriver: true,
+      useNativeDriver: false,
       speed: 30,
     }).start();
   };
@@ -66,7 +78,7 @@ function NavItem({ item, isActive, onPress, collapsed }) {
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: false,
       speed: 20,
     }).start();
   };
@@ -289,7 +301,42 @@ export default function sidebar({ onLogout, navigation }) {
       onLogout();
     }
     // Navigate back to Login screen
-    navigation?.replace('Login');
+    navigation?.replace('LoginScreen');
+  };
+
+  const renderActiveContent = () => {
+    switch (activeKey) {
+      case 'dashboard':
+        return <Dashboardpage />;
+      case 'schedules':
+        return <Schedule />;
+      case 'attendance':
+        return <Attendancebatch />;
+      case 'marks':
+        return <Marksbatch />;
+      case 'notes':
+        return <Notes />;
+      case 'tests':
+        return <Test />;
+      case 'teacherAttendance':
+        return <Teacherattendance />;
+      case 'settings':
+        return (
+          <View style={styles.placeholderView}>
+            <Text style={styles.contentHint}>Settings module</Text>
+            <Text style={styles.contentSub}>Configuration tools will appear here.</Text>
+          </View>
+        );
+      case 'support':
+        return (
+          <View style={styles.placeholderView}>
+            <Text style={styles.contentHint}>Support center</Text>
+            <Text style={styles.contentSub}>Help and support resources will appear here.</Text>
+          </View>
+        );
+      default:
+        return <Dashboardpage />;
+    }
   };
 
   // ── TABLET / LAPTOP LAYOUT ──────────────────────────────────────────────────
@@ -310,10 +357,9 @@ export default function sidebar({ onLogout, navigation }) {
           />
         </Animated.View>
 
-        {/* Main Content Area (placeholder) */}
+        {/* Main Content Area */}
         <View style={styles.mainContent}>
-          <Text style={styles.contentHint}>← Sidebar Preview</Text>
-          <Text style={styles.contentSub}>Active: {activeKey}</Text>
+          {renderActiveContent()}
         </View>
       </SafeAreaView>
     );
@@ -340,16 +386,11 @@ export default function sidebar({ onLogout, navigation }) {
 
       {/* Page Content */}
       <View style={styles.mobileMainContent}>
-        <Text style={styles.contentHint}>Tap ☰ to open sidebar</Text>
-        <Text style={styles.contentSub}>Active: {activeKey}</Text>
+        {renderActiveContent()}
       </View>
 
       {/* Bottom Navigation Bar */}
-      <MobileBottomBar
-        activeKey={activeKey}
-        onNavPress={setActiveKey}
-        onMenuPress={() => setDrawerOpen(true)}
-      />
+     
 
       {/* Slide-out Drawer */}
       <MobileDrawer
@@ -396,8 +437,6 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f4f6fb',
   },
 
@@ -626,6 +665,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   mobileMainContent: {
+    flex: 1,
+  },
+  placeholderView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

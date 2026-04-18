@@ -237,30 +237,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => (
 
 // ─── Bottom Nav (Mobile) ──────────────────────────────────────────────────────
 
-const BottomNav = ({ activeTab, setActiveTab }) => (
-  <View style={styles.bottomNav}>
-    {NAV_ITEMS.map((item) => (
-      <TouchableOpacity
-        key={item.label}
-        style={styles.bottomNavItem}
-        onPress={() => setActiveTab(item.label)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.bottomNavIcon, activeTab === item.label && styles.bottomNavIconActive]}>
-          {item.icon}
-        </Text>
-        <Text
-          style={[
-            styles.bottomNavLabel,
-            activeTab === item.label && styles.bottomNavLabelActive,
-          ]}
-        >
-          {item.label}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
+
 
 // ─── Main Content ─────────────────────────────────────────────────────────────
 
@@ -535,9 +512,7 @@ export default function Teacherattendance() {
         </View>
 
         {/* Bottom Nav only on mobile */}
-        {!isTabletOrDesktop && (
-          <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
-        )}
+      
       </View>
     </SafeAreaView>
   );

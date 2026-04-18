@@ -5,11 +5,9 @@ import {
   ScrollView, StatusBar, Platform,
 } from 'react-native';
 import Maindashboard from './Maindashboard';
-<<<<<<< HEAD:Screens/Committe/Dashboard/CommitteeSidebar.js
 import Permissions from '../Permissions/Permission';
-=======
 import AddInstitute from '../AddInstitute/AddInstitute';
->>>>>>> 9956b81142cb2c1a1feb9c0ccac04b38dee156df:Screens/Committe/Dashboard/CommitteSidebar.js
+import Register from '../AddInstitute/Register';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -19,11 +17,8 @@ const IS_LAPTOP = SCREEN_W >= 1024;
 const NAV_ITEMS = [
   { key: 'Dashboard',    icon: '▦' },
   { key: 'Add Institutes',   icon: '▣' },
-<<<<<<< HEAD:Screens/Committe/Dashboard/CommitteeSidebar.js
   { key: 'Permissions', icon: '⊞' },
-=======
   { key: 'Registration', icon: '⊞' },
->>>>>>> 9956b81142cb2c1a1feb9c0ccac04b38dee156df:Screens/Committe/Dashboard/CommitteSidebar.js
   { key: 'Settings',     icon: '⚙' },
 ];
 
@@ -113,6 +108,48 @@ const CommitteSidebar = () => {
   const [selectedInstitute, setSelectedInstitute] = useState(null);
   const slideAnim = useRef(new Animated.Value(IS_LAPTOP ? 1 : 0)).current;
 
+  const handleRouteChange = (key) => {
+    setActiveRoute(key);
+    if (key !== 'Add Institutes') {
+      setSelectedInstitute(null);
+    }
+  };
+
+  const renderActiveContent = () => {
+    switch (activeRoute) {
+      case 'Dashboard':
+        return (
+          <Maindashboard
+            onViewDirectory={() => setActiveRoute('Add Institutes')}
+            onInstituteClick={(institute) => {
+              setActiveRoute('Add Institutes');
+              setSelectedInstitute(institute);
+            }}
+          />
+        );
+      case 'Add Institutes':
+        return (
+          <AddInstitute
+            onInstituteClick={setSelectedInstitute}
+            selectedInstitute={selectedInstitute}
+          />
+        );
+      case 'Permissions':
+        return <Permissions />;
+      case 'Registration':
+        return (
+          <Register
+            onSubmit={() => setActiveRoute('Add Institutes')}
+            onCancel={() => setActiveRoute('Dashboard')}
+          />
+        );
+      case 'Settings':
+        return <PlaceholderScreen route={{ name: 'Settings' }} />;
+      default:
+        return <PlaceholderScreen route={{ name: activeRoute }} />;
+    }
+  };
+
   const openSidebar = () => {
     setSidebarOpen(true);
     Animated.timing(slideAnim, {
@@ -148,31 +185,12 @@ const CommitteSidebar = () => {
 
       {/* Content + Sidebar */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
-        {/* Sidebar rendered on left side */}
-        <View style={{ flex: 1 }}>
-          {activeRoute === 'Dashboard' ? (
-            <Maindashboard 
-              onViewDirectory={() => setActiveRoute('Add Institutes')}
-              onInstituteClick={(institute) => {
-                setActiveRoute('Add Institutes');
-                setSelectedInstitute(institute);
-              }}
-            />  
-          ) : activeRoute === 'Add Institutes' ? (
-            <AddInstitute onInstituteClick={setSelectedInstitute} selectedInstitute={selectedInstitute} />
-          ) : (
-            <PlaceholderScreen route={{ name: activeRoute }} />
-          )}
-          
-        </View>
-
-        {/* Sidebar rendered on top of content */}
+        {/* Sidebar */}
         {(sidebarOpen || IS_LAPTOP) && (
           <Sidebar
             navigation={{
               navigate: (key) => {
-                setActiveRoute(key);
-                setSelectedInstitute(null);
+                handleRouteChange(key);
                 if (!IS_LAPTOP) closeSidebar();
               },
             }}
@@ -182,14 +200,9 @@ const CommitteSidebar = () => {
           />
         )}
 
+        {/* Main content */}
         <View style={{ flex: 1 }}>
-          {activeRoute === 'Dashboard' ? (
-            <Maindashboard />  
-          ) : activeRoute === 'Permissions' ? (
-            <Permissions />
-          ) : (
-            <PlaceholderScreen route={{ name: activeRoute }} />
-          )}
+          {renderActiveContent()}
         </View>
       </View>
     </View>
@@ -222,6 +235,7 @@ const s = StyleSheet.create({
     shadowRadius: 3,
     borderBottomWidth: 1,
     borderBottomColor: '#E8ECF0',
+    
   },
   headerTitle: {
     fontSize: 17,

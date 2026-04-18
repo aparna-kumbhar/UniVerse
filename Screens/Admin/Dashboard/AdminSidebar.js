@@ -88,12 +88,12 @@ function NavItem({ item, isActive, onPress, collapsed }) {
 
   const handlePressIn = () => {
     scaleAnim.stopAnimation();
-    Animated.spring(scaleAnim, { toValue: 0.94, useNativeDriver: true }).start();
+    Animated.spring(scaleAnim, { toValue: 0.94, useNativeDriver: false }).start();
   };
 
   const handlePressOut = () => {
     scaleAnim.stopAnimation();
-    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: false }).start();
   };
 
   const bgColor = bgAnim.interpolate({
@@ -284,6 +284,39 @@ export default function AdminSidebar() {
     setActiveKey(key);
   };
 
+  const renderActiveContent = () => {
+    switch (activeKey) {
+      case 'Dashboard':
+        return <Maindashboard />;
+      case 'AccessManagement':
+        return <AccessManagement />;
+      case 'Batchcreation':
+        return <Batchcreation />;
+      case 'Batchselection':
+        return <Batchselection />;
+      case 'Feedback':
+        return <Feedback />;
+      case 'Database':
+        return <Database />;
+      case 'FeeManagement':
+        return <FeeManagement />;
+      case 'Support':
+        return (
+          <View style={styles.centeredPanel}>
+            <Text style={styles.panelTitle}>Support</Text>
+            <Text style={styles.panelSubtitle}>Help and support tools are available here.</Text>
+          </View>
+        );
+      default:
+        return (
+          <View style={styles.centeredPanel}>
+            <Text style={styles.panelTitle}>{activeKey}</Text>
+            <Text style={styles.panelSubtitle}>This section is available from the sidebar.</Text>
+          </View>
+        );
+    }
+  };
+
 
   // ── TABLET / LAPTOP LAYOUT ──────────────────────────────────────────────────
   if (IS_TABLET) {
@@ -303,13 +336,7 @@ export default function AdminSidebar() {
         </Animated.View>
 
         <View style={styles.mainContent}>
-          {activeKey === 'Dashboard' && <Maindashboard />}
-          {activeKey === 'AccessManagement' && <AccessManagement />}
-          {activeKey === 'Batchcreation' && <Batchcreation />}
-          {activeKey === 'Batchselection' && <Batchselection />}
-          {activeKey === 'Feedback' && <Feedback />}
-          {activeKey === 'Database' && <Database />}
-          {activeKey === 'FeeManagement' && <FeeManagement />}
+          {renderActiveContent()}
         </View>
       </SafeAreaView>
     );
@@ -335,16 +362,7 @@ export default function AdminSidebar() {
       </View>
 
       <View style={styles.mobileMainContent}>
-        <View style={styles.mobileMainContent}>
-          {activeKey === 'Dashboard' && <Maindashboard />}
-          {activeKey === 'AccessManagement' && <AccessManagement />}
-          {activeKey === 'Batchcreation' && <Batchcreation />}
-          {activeKey === 'Batchselection' && <Batchselection />}
-          {activeKey === 'Feedback' && <Feedback />}
-          {activeKey === 'Database' && <Database />}
-          {activeKey === 'FeeManagement' && <FeeManagement />}
-
-        </View>
+        {renderActiveContent()}
       </View>
 
       {/* Slide-out Drawer */}
@@ -396,6 +414,23 @@ const styles = StyleSheet.create({
   mainContent: {
     flex:            1,
     backgroundColor: '#f4f6fb',
+  },
+  centeredPanel: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  panelTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a2744',
+  },
+  panelSubtitle: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#6b7690',
+    textAlign: 'center',
   },
 
   // ── Sidebar Inner ─────────────────────────────────────────────────────────
