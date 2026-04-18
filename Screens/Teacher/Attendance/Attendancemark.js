@@ -136,7 +136,6 @@ const Attendancemark = () => {
     const navigation = useNavigation();
   const [students, setStudents]       = useState(INITIAL_STUDENTS);
   const [search, setSearch]           = useState('');
-  const [activeTab, setActiveTab]     = useState('register');
   const [filterStatus, setFilterStatus] = useState('all');
 
   
@@ -195,7 +194,6 @@ const Attendancemark = () => {
 
       {/* ── Header ── */}
 <View style={[styles.header, isLaptop && styles.headerLaptop]}>
-  
   <View style={styles.headerLeft}>
     <TouchableOpacity
       activeOpacity={0.7}
@@ -205,18 +203,8 @@ const Attendancemark = () => {
       <Text style={styles.backIcon}>←</Text>
     </TouchableOpacity>
 
-    <View>
-      <Text style={styles.headerTitle}>Attendance Registry</Text>
-      <Text style={styles.headerSubtitle}>FM-402 · Oct 14, 2024</Text>
-    </View>
+    <Text style={styles.headerTitle}>Attendance</Text>
   </View>
-
-  <TouchableOpacity activeOpacity={0.7}>
-    <View style={styles.profileAvatar}>
-      <Text style={styles.profileInitial}>P</Text>
-    </View>
-  </TouchableOpacity>
-
 </View>
           
 
@@ -230,11 +218,9 @@ const Attendancemark = () => {
             ]}
           >
             {/* ── Session Info ── */}
-            <View style={styles.sessionSection}>
+         
               <View style={styles.sessionIdRow}>
-                <View style={styles.sessionBar} />
-                <Text style={styles.sessionIdText}>SESSION ID: FM-402</Text>
-              </View>
+               
               <Text style={styles.sessionTitle}>Advanced Fluid{'\n'}Mechanics</Text>
               <View style={styles.dateRow}>
                 <Text style={styles.dateIcon}>🗓</Text>
@@ -370,32 +356,10 @@ const Attendancemark = () => {
           </View>
 
           {/* ── Bottom Tab Bar (mobile only) ── */}
-          {!isLaptop && (
-            <View style={styles.tabBar}>
-              <BottomTab icon="👤" label="REGISTER" active={activeTab === 'register'} onPress={() => setActiveTab('register')} />
-              <BottomTab icon="📊" label="SUMMARY"  active={activeTab === 'summary'}  onPress={() => setActiveTab('summary')}  />
-              <BottomTab icon="⬆"  label="EXPORT"   active={activeTab === 'export'}   onPress={() => setActiveTab('export')}   />
-            </View>
-          )}
+         
 
           {/* ── Laptop Tab Row ── */}
-          {isLaptop && (
-            <View style={styles.laptopTabRow}>
-              {['register', 'summary', 'export'].map((tab) => (
-                <TouchableOpacity
-                  key={tab}
-                  activeOpacity={0.7}
-                  onPress={() => setActiveTab(tab)}
-                  style={[styles.laptopTab, activeTab === tab && styles.laptopTabActive]}
-                >
-                  <Text style={[styles.laptopTabText, activeTab === tab && styles.laptopTabTextActive]}>
-                    {tab.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+                 </View>
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -423,24 +387,22 @@ const styles = StyleSheet.create({
 
   // ── Header ──
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 16,   // reduced
+  paddingVertical: 10,     // reduced
+  backgroundColor: '#FFFFFF',
+  borderBottomWidth: 1,
+  borderBottomColor: '#E5E7EB',
+},
   headerLaptop: {
     paddingHorizontal: 32,
     paddingVertical: 18,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
+ headerLeft: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
   menuBtn: {
     padding: 6,
   },
@@ -828,15 +790,15 @@ const styles = StyleSheet.create({
   laptopTabText:     { fontSize: 12, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1.2 },
   laptopTabTextActive: { color: '#1D4ED8' },
 
-  backBtn: {
+backBtn: {
   padding: 6,
-  marginRight: 6,
+  marginRight: 8,   // spacing between icon and title
 },
 
 backIcon: {
-  fontSize: 22,
+  fontSize: 20,
   color: '#111827',
-  fontWeight: '700',
+  fontWeight: '600',
 },
 });
 

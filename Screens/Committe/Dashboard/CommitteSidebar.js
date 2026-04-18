@@ -6,6 +6,7 @@ import {
   ScrollView, StatusBar, Platform,
 } from 'react-native';
 import Maindashboard from './Maindashboard';
+import AddInstitute from '../AddInstitute/AddInstitute';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -14,8 +15,7 @@ const IS_LAPTOP = SCREEN_W >= 1024;
 
 const NAV_ITEMS = [
   { key: 'Dashboard',    icon: '▦' },
-  { key: 'Analytics',    icon: '▶' },
-  { key: 'Institutes',   icon: '▣' },
+  { key: 'Add Institutes',   icon: '▣' },
   { key: 'Registration', icon: '⊞' },
   { key: 'Settings',     icon: '⚙' },
 ];
@@ -107,6 +107,7 @@ const Sidebar = ({ navigation, activeRoute, slideAnim, onClose }) => {
 const CommitteSidebar = () => {
   const [activeRoute, setActiveRoute] = useState('Dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(IS_LAPTOP);
+  const [selectedInstitute, setSelectedInstitute] = useState(null);
   const slideAnim = useRef(new Animated.Value(IS_LAPTOP ? 1 : 0)).current;
 
   const openSidebar = () => {
@@ -143,10 +144,19 @@ const CommitteSidebar = () => {
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <View style={{ flex: 1 }}>
           {activeRoute === 'Dashboard' ? (
-            <Maindashboard />
+            <Maindashboard 
+              onViewDirectory={() => setActiveRoute('Add Institutes')}
+              onInstituteClick={(institute) => {
+                setActiveRoute('Add Institutes');
+                setSelectedInstitute(institute);
+              }}
+            />  
+          ) : activeRoute === 'Add Institutes' ? (
+            <AddInstitute onInstituteClick={setSelectedInstitute} selectedInstitute={selectedInstitute} />
           ) : (
             <PlaceholderScreen route={{ name: activeRoute }} />
           )}
+          
         </View>
 
         {/* Sidebar rendered on top of content */}
@@ -155,6 +165,7 @@ const CommitteSidebar = () => {
             navigation={{
               navigate: (key) => {
                 setActiveRoute(key);
+                setSelectedInstitute(null);
                 if (!IS_LAPTOP) closeSidebar();
               },
             }}

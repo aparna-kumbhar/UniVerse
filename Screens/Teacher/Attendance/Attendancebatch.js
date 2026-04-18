@@ -362,7 +362,7 @@ function AttendancebatchScreen({ navigation }) {
     // FIX: Using SafeAreaView from 'react-native-safe-area-context' instead of
     // the deprecated one from 'react-native'. Make sure <SafeAreaProvider>
     // wraps your root App component (in App.js / root navigator).
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <View style={styles.root}>
         <MainContent />
@@ -576,11 +576,10 @@ const styles = StyleSheet.create({
       overflowX: 'hidden',
     }),
   },
-  scrollContent: {
-    padding: IS_LAPTOP ? 32 : 16,
-    paddingBottom: 40,
-  },
-
+ scrollContent: {
+  paddingHorizontal: IS_LAPTOP ? 32 : 16,
+  paddingBottom: 40,
+},
   // ── Page header ───────────────────────────────────────────────────────────
   pageHeader: {
     flexDirection: IS_LAPTOP || IS_TABLET ? 'row' : 'column',

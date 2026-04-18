@@ -147,7 +147,6 @@ function LoginScreen({ navigation }) {
 export default function Login() {
   return (
     <LoginStack.Navigator screenOptions={{ headerShown: false }}>
-      {/* ✅ Unique screen name — avoids "same name nested" warning */}
       <LoginStack.Screen name="LoginScreen"      component={LoginScreen} />
       <LoginStack.Screen name="TeacherDashboard" component={TeacherSidebar} />
       <LoginStack.Screen name="AdminDashboard"   component={AdminSidebar} />

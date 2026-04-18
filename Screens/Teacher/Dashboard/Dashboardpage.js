@@ -55,11 +55,7 @@ const col = (n, gap = 16) => {
 const TopBar = () => (
   <View style={styles.topBar}>
    
-    <View style={styles.topBarRight}>
-     
-      
-  
-    </View>
+    
   </View>
 );
 
@@ -167,7 +163,7 @@ export default function Dashboardpage() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor={C.navBg} />
-      <TopBar />
+      
       
 
       <ScrollView
@@ -328,11 +324,11 @@ const styles = StyleSheet.create({
   avatarRole: { fontSize: 10, color: C.textSecondary },
 
   // ── Scroll
-  scrollContent: {
+ scrollContent: {
   paddingHorizontal: IS_LAPTOP ? 32 : 16,
-  paddingTop: 20,
+  paddingTop: 10,   // reduce from 20 → 10
   paddingBottom: 40,
-  flexGrow: 1,   // ✅ ensures content expands
+  flexGrow: 1,
 },
 
   // ── Hero
