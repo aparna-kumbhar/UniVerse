@@ -553,16 +553,7 @@ const AnnouncementsCard = () => (
   </View>
 );
 
-const Header = () => (
-  <View style={styles.header}>
-    <Text style={styles.logo}>UniVerse</Text>
-    <TouchableOpacity style={styles.avatarBtn} activeOpacity={0.8}>
-      <View style={styles.avatarCircle}>
-        <Text style={styles.avatarText}>AM</Text>
-      </View>
-    </TouchableOpacity>
-  </View>
-);
+
 
 // ─── App Root ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -588,7 +579,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-      <Header />
+     
 
       {/*
         FIX: Added `maintainVisibleContentPosition` to prevent the ScrollView

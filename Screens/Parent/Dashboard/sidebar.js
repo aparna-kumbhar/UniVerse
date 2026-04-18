@@ -24,6 +24,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_TABLET = SCREEN_WIDTH >= 768;
 const IS_MOBILE = SCREEN_WIDTH < 768;
 const SIDEBAR_WIDTH = IS_TABLET ? 280 : 240;  
+const ANDROID_STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
 
 const NAV_ITEMS = [
   { id: 'dashboard',  label: 'Dashboard',  icon: '⊞' },
@@ -380,7 +381,7 @@ function ParentDashboardShell() {
             >
               <HamburgerIcon isOpen={hamburgerOpen} color="#1a1a2e" />
             </TouchableOpacity>
-            <Text style={shellStyles.topBarTitle}>Parent Portal</Text>
+            <Text style={shellStyles.topBarTitle}>UniVerse</Text>
           </View>
         </SafeAreaView>
 
@@ -475,7 +476,7 @@ const shellStyles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'flex-end',
     paddingHorizontal: 16,
-    paddingTop:        18,
+    paddingTop:        Platform.OS === 'android' ? ANDROID_STATUSBAR_HEIGHT + 8 : 18,
     paddingBottom:     14,
     backgroundColor:   '#ffffff',
     borderBottomWidth: 1,
@@ -497,9 +498,11 @@ const shellStyles = StyleSheet.create({
     marginBottom:    2,
   },
   topBarTitle: {
-    fontSize:   18,
-    fontWeight: '700',
-    color:      '#1a1a2e',
+    fontSize:   28,
+    fontWeight: '900',
+    color:      '#5B52E5',
+      letterSpacing: -0.1,
+      margineBottom: 5,
   },
   stackContainer: { flex: 1 },
 

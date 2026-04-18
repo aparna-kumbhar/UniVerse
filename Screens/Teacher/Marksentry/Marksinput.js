@@ -10,6 +10,7 @@ import {
   Platform,
   Dimensions,
   Alert,
+  StatusBar,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -45,13 +46,9 @@ const TEXT_LIGHT = '#8AA8A3';
 const BORDER     = '#D0E4DF';
 
 // ─── NavBar ───────────────────────────────────────────────────────────────────
-const NavBar = ({ onMenuPress }) => (
+const NavBar = () => (
   <View style={styles.navbar}>
-    <TouchableOpacity onPress={onMenuPress} activeOpacity={0.7} style={styles.menuBtn}>
-      <View style={styles.hamburgerLine} />
-      <View style={[styles.hamburgerLine, { width: 18 }]} />
-      <View style={styles.hamburgerLine} />
-    </TouchableOpacity>
+    <View style={styles.navSideSpacer} />
 
     <Text style={styles.navTitle}>Scholar Ledger</Text>
 
@@ -209,7 +206,7 @@ const EnterMarksScreen = () => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <NavBar onMenuPress={() => Alert.alert('Menu', 'Sidebar would open here.')} />
+      <NavBar />
 
       <View style={containerStyle}>
         {/* ── Main scroll area ── */}
@@ -345,21 +342,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 14,
+    paddingBottom: 14,
     backgroundColor: BG_CARD,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
-    marginTop: 15,
   },
-  menuBtn: {
-    gap: 5,
-    padding: 4,
-  },
-  hamburgerLine: {
-    width: 22,
-    height: 2,
-    borderRadius: 2,
-    backgroundColor: TEXT_DARK,
+  navSideSpacer: {
+    width: 40,
+    height: 40,
   },
   navTitle: {
     flex: 1,

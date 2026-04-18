@@ -138,6 +138,14 @@ const Attendancemark = () => {
   const [search, setSearch]           = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('Attendancebatch');
+  };
+
   
 
   const handleStatusChange = useCallback((id, status) => {
@@ -198,7 +206,7 @@ const Attendancemark = () => {
     <TouchableOpacity
       activeOpacity={0.7}
       style={styles.backBtn}
-      onPress={() => navigation.goBack()}
+      onPress={handleBackPress}
     >
       <Text style={styles.backIcon}>←</Text>
     </TouchableOpacity>

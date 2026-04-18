@@ -13,6 +13,7 @@ import Register from '../AddInstitute/Register';
 const { width: SCREEN_W } = Dimensions.get('window');
 const SIDEBAR_W = 280;
 const IS_LAPTOP = SCREEN_W >= 1024;
+const ANDROID_STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
 
 const NAV_ITEMS = [
   { key: 'Dashboard',    icon: '▦' },
@@ -225,9 +226,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 14,
+    paddingTop: Platform.OS === 'android' ? ANDROID_STATUSBAR_HEIGHT + 10 : 14,
     paddingBottom: 14,
-    height: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 56 : 70,
+    height: Platform.OS === 'android' ? ANDROID_STATUSBAR_HEIGHT + 56 : 70,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

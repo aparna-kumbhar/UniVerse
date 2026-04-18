@@ -282,10 +282,7 @@ const goToPrevMonth = () => {
             style={styles.searchInput}
           />
         </View>
-        <TouchableOpacity style={styles.notifBtn} activeOpacity={0.8}>
-          <Text style={styles.notifIcon}>🔔</Text>
-          <View style={styles.notifDot} />
-        </TouchableOpacity>
+     
         <View style={styles.userInfo}>
           <View>
             <Text style={styles.userName}>Dr. Elena Rodriguez</Text>

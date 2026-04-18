@@ -455,6 +455,7 @@ function TestInProgressScreen({ navigation, route }) {
 // ─── Test Detail Screen ───────────────────────────────────────────────────────
 function TestDetailScreen({ navigation, route }) {
   const test = route?.params?.test;
+  const [isTestRunning, setIsTestRunning] = useState(false);
 
   if (!test) {
     return (
@@ -580,13 +581,34 @@ function TestDetailScreen({ navigation, route }) {
       <View style={styles.testDetailFooter}>
         <View style={styles.buttonGrid}>
           <TouchableOpacity
-            style={[styles.actionBtn, styles.startTestBtn]}
+            style={[
+              styles.actionBtn,
+              isTestRunning ? styles.endTestBtn : styles.startTestBtn,
+            ]}
             onPress={() => {
-              navigation.navigate('TestInProgress', { test });
+              if (!isTestRunning) {
+                setIsTestRunning(true);
+                Alert.alert('Test Started', 'The test is now active.');
+                return;
+              }
+
+              Alert.alert('End Test', 'Are you sure you want to end this test?', [
+                { text: 'Cancel', onPress: () => {} },
+                {
+                  text: 'End Test',
+                  onPress: () => {
+                    setIsTestRunning(false);
+                    Alert.alert('Test Ended', 'The test has been ended.');
+                  },
+                  style: 'destructive',
+                },
+              ]);
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.actionBtnText}>▶ Start Test</Text>
+            <Text style={styles.actionBtnText}>
+              {isTestRunning ? '✕ End Test' : '▶ Start Test'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -604,23 +626,6 @@ function TestDetailScreen({ navigation, route }) {
         </View>
 
         <View style={styles.buttonGrid}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.endTestBtn]}
-            onPress={() => {
-              Alert.alert('End Test', 'Are you sure you want to exit this test?', [
-                { text: 'Cancel', onPress: () => {} },
-                {
-                  text: 'Exit',
-                  onPress: () => navigation.goBack(),
-                  style: 'destructive',
-                },
-              ]);
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.actionBtnText}>✕ End Test</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.actionBtn, styles.deleteTestBtn]}
             onPress={() => {

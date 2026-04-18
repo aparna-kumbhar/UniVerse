@@ -312,9 +312,7 @@ function MarksbatchScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text style={styles.pageTitle}>Select Batch</Text>
-          <Text style={styles.pageDesc}>
-            Choose a focus group to manage academic performance records and entry status.
-          </Text>
+        
           {filtered.map(batch => (
             <BatchCard
               key={batch.id}

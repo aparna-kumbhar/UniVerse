@@ -24,6 +24,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = 220;
 const IS_TABLET = SCREEN_WIDTH >= 768;
 const IS_WEB = Platform.OS === 'web';
+const ANDROID_STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const icons = {
@@ -394,6 +395,7 @@ const styles = StyleSheet.create({
     flex:           1,
     flexDirection:  'row',
     backgroundColor:'#f4f6fb',
+    paddingTop:     ANDROID_STATUSBAR_HEIGHT,
   },
   sidebar: {
     width:           SIDEBAR_WIDTH,
@@ -585,6 +587,7 @@ const styles = StyleSheet.create({
   mobileRoot: {
     flex:            1,
     backgroundColor: '#f4f6fb',
+    paddingTop:      ANDROID_STATUSBAR_HEIGHT,
   },
   mobileHeader: {
     flexDirection:  'row',

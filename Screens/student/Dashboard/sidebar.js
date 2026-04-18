@@ -20,6 +20,7 @@ import {
   Dimensions,
   Modal,
   Animated,
+  StatusBar,
 } from "react-native";
 import Svg, { Rect, Path, Line, Circle } from "react-native-svg";
 import Dashboard      from "./Dashboardpage";
@@ -37,6 +38,7 @@ import Setting        from "../Setting/setting";
 const SIDEBAR_WIDTH = 240;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IS_MOBILE = SCREEN_WIDTH <= 768;
+const ANDROID_STATUSBAR_HEIGHT = Platform.OS === "android" ? (StatusBar.currentHeight || 0) : 0;
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
@@ -403,7 +405,7 @@ const styles = StyleSheet.create({
     alignItems:        "center",
     justifyContent:    "space-between",
     backgroundColor:   T.white,
-    paddingTop:        Platform.select({ ios: 52, android: 28, default: 16 }),
+    paddingTop:        Platform.select({ ios: 52, android: ANDROID_STATUSBAR_HEIGHT + 10, default: 16 }),
     paddingBottom:     12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
@@ -458,7 +460,7 @@ const styles = StyleSheet.create({
   sidebarPanel: {
     flex:             1,
     backgroundColor:  T.white,
-    paddingTop:       Platform.select({ ios: 52, android: 28, default: 24 }),
+    paddingTop:       Platform.select({ ios: 52, android: ANDROID_STATUSBAR_HEIGHT + 10, default: 24 }),
     paddingBottom:    20,
     borderRightWidth: 1,
     borderRightColor: T.border,

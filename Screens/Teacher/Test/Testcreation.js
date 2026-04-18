@@ -10,9 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Platform,
 } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
-import { File } from 'expo-file-system';
 
 // ─── Types / Constants ────────────────────────────────────────────────────────
 
@@ -43,6 +42,8 @@ const C = {
   textSec: '#6b6b67',
   textTert: '#9a9a94',
 };
+
+const IS_WEB = Platform.OS === 'web';
 
 // ─── CheckCircle ──────────────────────────────────────────────────────────────
 
@@ -216,6 +217,11 @@ function parsePDFContent(text) {
 
 async function readPDFWithModernAPI(fileUri) {
   try {
+    if (IS_WEB) {
+      throw new Error('PDF import is not supported in the web preview for this screen.');
+    }
+
+    const { File } = require('expo-file-system');
     const file = new File(fileUri);
     if (!file.exists) {
       throw new Error('File does not exist or cannot be accessed');
@@ -390,6 +396,15 @@ export default function Testcreation({ navigation, onTestCreated, isEditMode, te
 
   const handleImportPDF = async () => {
     try {
+      if (IS_WEB) {
+        Alert.alert(
+          'PDF Import Unavailable',
+          'This teacher test screen can import PDFs only in the native app build. Please use the mobile app for PDF uploads.'
+        );
+        return;
+      }
+
+      const DocumentPicker = require('expo-document-picker');
       const result = await DocumentPicker.getDocumentAsync({
         type: 'application/pdf',
         copyToCacheDirectory: true,

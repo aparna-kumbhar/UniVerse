@@ -139,7 +139,7 @@ function TopBar() {
   );
 }
 
-function SpotlightCard() {
+function SpotlightCard({ onTakeAttendance }) {
   return (
     <View style={styles.spotlightCard}>
       <View style={styles.spotlightLeft}>
@@ -147,20 +147,21 @@ function SpotlightCard() {
           <Text style={{ fontSize: 24 }}>⚗️</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <View style={styles.inProgressBadge}>
-            <Text style={styles.inProgressText}>IN PROGRESS</Text>
-          </View>
-          <Text style={styles.spotlightTitle}>Advanced Quantum Physics</Text>
+          <Text style={styles.spotlightTitle}>
+            Advanced Quantum Physics
+          </Text>
+          <TouchableOpacity
+            style={styles.attendanceBtn}
+            activeOpacity={0.85}
+            onPress={onTakeAttendance}
+          >
+            <Text style={styles.attendanceBtnText}>Take Attendance</Text>
+          </TouchableOpacity>
           <View style={styles.spotlightMeta}>
-            <Text style={styles.metaText}>📍 Lecture Hall B</Text>
-            <Text style={styles.metaText}>  🕘 09:00 – 10:30 AM</Text>
-            <Text style={styles.metaText}>  👤 24 Students present</Text>
+           <Text style={styles.metaText}>  🕘 09:00 – 10:30 AM</Text>
           </View>
         </View>
       </View>
-      <TouchableOpacity style={styles.attendanceBtn} activeOpacity={0.85}>
-        <Text style={styles.attendanceBtnText}>Take Attendance</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -261,9 +262,13 @@ function WeekGrid({ isDesktop }) {
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-export default function Schedule() {
+export default function Schedule({ onTakeAttendanceNavigate }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
+
+  const goToAttendanceMark = () => {
+    onTakeAttendanceNavigate?.();
+  };
 
 
   return (
@@ -291,9 +296,7 @@ export default function Schedule() {
               <Text style={styles.pageTitle}>Active Learning</Text>
             </View>
             <View style={styles.headerBtns}>
-              <TouchableOpacity style={styles.exportBtn} activeOpacity={0.8}>
-                <Text style={styles.exportBtnText}>Export PDF</Text>
-              </TouchableOpacity>
+             
               <TouchableOpacity style={styles.modifyBtn} activeOpacity={0.85}>
                 <Text style={styles.modifyBtnText}>✏  Modify Schedule</Text>
               </TouchableOpacity>
@@ -301,7 +304,7 @@ export default function Schedule() {
           </View>
 
           {/* Spotlight */}
-          <SpotlightCard />
+          <SpotlightCard onTakeAttendance={goToAttendanceMark} />
 
           {/* Week Grid + Curator */}
           <WeekGrid isDesktop={isDesktop} />
@@ -413,6 +416,8 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, color: C.textMuted },
   attendanceBtn: {
     backgroundColor: C.green, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10,
+    alignSelf: 'flex-start',
+    marginTop: 10,
   },
   attendanceBtnText: { color: C.white, fontWeight: '700', fontSize: 13 },
 

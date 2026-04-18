@@ -17,10 +17,12 @@ import Marksbatch from '../Marksentry/Marksbatch';
 import Notes from '../Notes/Notes';
 import Test from '../Test/Test';
 import Teacherattendance from '../Teacherattendance/Teacherattendance';
+import Profile from '../Profile/Profile';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = 220;
 const IS_TABLET = SCREEN_WIDTH >= 768;
+const ANDROID_STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
 
 // ── Icons (SVG-style paths rendered as Unicode / emoji fallbacks) ──────────────
 const icons = {
@@ -41,6 +43,7 @@ const icons = {
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: icons.dashboard },
+  {key: 'profile', label: 'Profile', icon: '👤' },
   { key: 'schedules', label: 'Schedule', icon: icons.schedules },
   { key: 'attendance', label: 'Attendance', icon: icons.attendance },
   { key: 'marks', label: 'Marks Entry', icon: icons.marks },
@@ -50,8 +53,7 @@ const NAV_ITEMS = [
 ];
 
 const BOTTOM_ITEMS = [
-  { key: 'settings', label: 'Settings', icon: icons.settings },
-  { key: 'support', label: 'Support', icon: icons.support },
+  { key: 'logout', label: 'Logout', icon: icons.close },
 ];
 
 // ── NavItem Component ─────────────────────────────────────────────────────────
@@ -176,7 +178,13 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
             key={item.key}
             item={item}
             isActive={activeKey === item.key}
-            onPress={onNavPress}
+            onPress={(key) => {
+              if (key === 'logout') {
+                onLogout();
+                return;
+              }
+              onNavPress(key);
+            }}
             collapsed={collapsed}
           />
         ))}
@@ -191,8 +199,8 @@ function SidebarContent({ activeKey, onNavPress, collapsed, onToggleCollapse, on
             </View>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>Dr. Aris Thorne</Text>
-              <Text style={styles.userRole}>Tap to logout</Text>
             </View>
+            <Text style={styles.userLogoutSymbol}>⎋</Text>
           </View>
         </TouchableOpacity>
       )}
@@ -291,6 +299,7 @@ export default function sidebar({ onLogout, navigation }) {
   const [activeKey, setActiveKey] = useState('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [attendanceInitialRoute, setAttendanceInitialRoute] = useState('Attendancebatch');
 
   const handleNewSession = () => {
     console.log('New session triggered');
@@ -304,14 +313,37 @@ export default function sidebar({ onLogout, navigation }) {
     navigation?.replace('LoginScreen');
   };
 
+  const handleNavPress = (key) => {
+    if (key === 'logout') {
+      handleLogout();
+      return;
+    }
+    if (key === 'attendance') {
+      setAttendanceInitialRoute('Attendancebatch');
+    }
+    setActiveKey(key);
+  };
+
+  const handleTakeAttendanceFromSchedule = () => {
+    setAttendanceInitialRoute('Attendancemark');
+    setActiveKey('attendance');
+  };
+
   const renderActiveContent = () => {
     switch (activeKey) {
       case 'dashboard':
         return <Dashboardpage />;
+      case 'profile':
+        return <Profile />;
       case 'schedules':
-        return <Schedule />;
+        return <Schedule onTakeAttendanceNavigate={handleTakeAttendanceFromSchedule} />;
       case 'attendance':
-        return <Attendancebatch />;
+        return (
+          <Attendancebatch
+            key={attendanceInitialRoute}
+            initialRouteName={attendanceInitialRoute}
+          />
+        );
       case 'marks':
         return <Marksbatch />;
       case 'notes':
@@ -349,7 +381,7 @@ export default function sidebar({ onLogout, navigation }) {
         <Animated.View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
           <SidebarContent
             activeKey={activeKey}
-            onNavPress={setActiveKey}
+            onNavPress={handleNavPress}
             collapsed={collapsed}
             onToggleCollapse={() => setCollapsed((c) => !c)}
             onNewSession={handleNewSession}
@@ -396,7 +428,7 @@ export default function sidebar({ onLogout, navigation }) {
       <MobileDrawer
         visible={drawerOpen}
         activeKey={activeKey}
-        onNavPress={setActiveKey}
+        onNavPress={handleNavPress}
         onClose={() => setDrawerOpen(false)}
         onNewSession={handleNewSession}
         onLogout={handleLogout}
@@ -422,6 +454,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#f4f6fb',
+    paddingTop: ANDROID_STATUSBAR_HEIGHT,
   },
   sidebar: {
     width: SIDEBAR_WIDTH,
@@ -620,11 +653,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: TEXT_MUTED,
   },
+  userLogoutSymbol: {
+    fontSize: 18,
+    color: ACCENT,
+    fontWeight: '800',
+  },
 
   // ── Mobile ────────────────────────────────────────────────────────────────
   mobileRoot: {
     flex: 1,
     backgroundColor: '#f4f6fb',
+    paddingTop: ANDROID_STATUSBAR_HEIGHT,
   },
   mobileHeader: {
     flexDirection: 'row',

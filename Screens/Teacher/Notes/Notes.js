@@ -12,7 +12,6 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_DESKTOP = SCREEN_WIDTH >= 768;
@@ -39,6 +38,8 @@ const C = {
   inputBg: '#F8FAFB',
   shadow: 'rgba(13,27,62,0.08)',
 };
+
+const IS_WEB = Platform.OS === 'web';
 
 // ── Data ───────────────────────────────────────────────────────
 const BATCH_LIST = [
@@ -208,6 +209,15 @@ function MainContent({
     closeAll();
     
     try {
+      if (IS_WEB) {
+        Alert.alert(
+          'File Upload Unavailable',
+          'Browse Files is available in the native app build only. Please use the mobile app to upload resources.'
+        );
+        return;
+      }
+
+      const DocumentPicker = require('expo-document-picker');
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
         copyToCacheDirectory: false,

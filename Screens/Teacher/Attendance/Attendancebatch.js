@@ -855,9 +855,12 @@ const styles = StyleSheet.create({
 
 const Stack = createStackNavigator();
 
-export default function Attendancebatch() {
+export default function Attendancebatch({ initialRouteName = 'Attendancebatch' }) {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName={initialRouteName}
+      screenOptions={{ headerShown: false }}
+    >
       <Stack.Screen
         name="Attendancebatch"
         component={AttendancebatchScreen}
