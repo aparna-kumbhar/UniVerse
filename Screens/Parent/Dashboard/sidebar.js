@@ -119,10 +119,6 @@ const SidebarPanel = ({ activeItem, onItemPress, onClose, isMobile }) => (
           </TouchableOpacity>
         )}
       </View>
-
-      <TouchableOpacity style={sidebarStyles.switchBtn} activeOpacity={0.8}>
-        <Text style={sidebarStyles.switchBtnText}>Switch Student</Text>
-      </TouchableOpacity>
     </SafeAreaView>
 
     {/* Divider */}
@@ -236,20 +232,6 @@ const sidebarStyles = StyleSheet.create({
     fontSize:   14,
     color:      '#6b7280',
     fontWeight: '600',
-  },
-  switchBtn: {
-    marginHorizontal: 20,
-    backgroundColor:  '#5b5bd6',
-    borderRadius:     10,
-    paddingVertical:  10,
-    alignItems:       'center',
-    marginBottom:     4,
-  },
-  switchBtnText: {
-    color:         '#fff',
-    fontSize:      13,
-    fontWeight:    '600',
-    letterSpacing: 0.2,
   },
   divider: {
     height:           1,

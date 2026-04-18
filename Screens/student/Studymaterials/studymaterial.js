@@ -128,21 +128,6 @@ function TopNav() {
   const [search, setSearch] = useState('');
   return (
     <View style={styles.topNav}>
-      <View style={styles.searchWrapper}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search resources..."
-          placeholderTextColor={C.muted}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
-      <View style={styles.navRight}>
-        <TouchableOpacity activeOpacity={0.8} style={styles.navBrand}>
-          <Text style={styles.navBrandText}>StudyPortal</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }

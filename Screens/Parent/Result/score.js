@@ -97,17 +97,27 @@ function GrowthChart({ year }) {
   const data = GROWTH_DATA[year] || GROWTH_DATA[2023];
   const maxVal = 100;
   const chartH = 100;
-  const barW = isLaptop ? 28 : 18;
-  const gap = isLaptop ? 8 : 4;
+  const [chartW, setChartW] = useState(0);
+  const count = data.length;
+  const gap = isLaptop ? 10 : 6;
+  const safeW = Math.max(chartW, 1);
+  const barW = Math.max(10, (safeW - gap * (count - 1)) / count);
 
   return (
-    <View>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: chartH + 4 }}>
+    <View
+      style={{ width: '100%' }}
+      onLayout={(e) => setChartW(e.nativeEvent.layout.width)}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: chartH + 4, width: '100%' }}>
         {data.map((val, i) => {
           const isLast = i === data.length - 1;
           const barH = Math.max(8, (val / maxVal) * chartH);
+          const isLastBar = i === data.length - 1;
           return (
-            <View key={i} style={{ alignItems: 'center', marginRight: gap }}>
+            <View
+              key={i}
+              style={{ alignItems: 'center', marginRight: isLastBar ? 0 : gap }}
+            >
               <View style={[
                 styles.chartBar,
                 { height: barH, width: barW },
@@ -119,9 +129,16 @@ function GrowthChart({ year }) {
           );
         })}
       </View>
-      <View style={{ flexDirection: 'row', marginTop: 6 }}>
+      <View style={{ flexDirection: 'row', marginTop: 8, width: '100%' }}>
         {MONTHS_SHORT.map((m, i) => (
-          <View key={i} style={{ width: barW + gap, alignItems: 'center' }}>
+          <View
+            key={i}
+            style={{
+              width: barW,
+              marginRight: i === MONTHS_SHORT.length - 1 ? 0 : gap,
+              alignItems: 'center',
+            }}
+          >
             <Text style={styles.chartMonthLabel}>{m}</Text>
           </View>
         ))}
@@ -222,7 +239,7 @@ export default function ParentPortalGrades() {
               </View>
             </View>
             {/* Year label */}
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
               {availableYears.map(y => (
                 <TouchableOpacity key={y} onPress={() => setChartYear(y)}
                   style={[styles.yearTab, chartYear === y && styles.yearTabActive]}>

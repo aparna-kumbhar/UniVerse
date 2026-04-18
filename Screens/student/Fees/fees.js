@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Dimensions,
   SafeAreaView,
   StatusBar,
-  TextInput,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -58,43 +57,6 @@ const upcomingDues = [
   { label: 'Lab Equipment Fee', sub: 'Due in 12 days', amount: '$1,500' },
   { label: 'Student Union Fund', sub: 'Due in 24 days', amount: '$900'  },
 ];
-
-// ─── Top Nav ──────────────────────────────────────────────────────────────────
-function TopNav() {
-  const [search, setSearch] = useState('');
-  return (
-    <View style={styles.topNav}>
-      <View style={styles.searchWrapper}>
-        <Text style={styles.searchIconText}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search transactions, receipts..."
-          placeholderTextColor={C.muted}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
-      <View style={styles.navRight}>
-        {isTablet && (
-          <TouchableOpacity activeOpacity={0.8} style={styles.userChip}>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>Sarah Jenkins</Text>
-              <Text style={styles.userId}>ID: #GA-2024-882</Text>
-            </View>
-            <View style={styles.userAvatar}>
-              <Text style={styles.userAvatarText}>SJ</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        {!isTablet && (
-          <TouchableOpacity activeOpacity={0.8} style={styles.userAvatar}>
-            <Text style={styles.userAvatarText}>SJ</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
-}
 
 // ─── Summary Cards ────────────────────────────────────────────────────────────
 function SummaryCards() {
@@ -246,9 +208,6 @@ function UpcomingDues() {
         <Text style={styles.dueTotalLabel}>Total Payable</Text>
         <Text style={styles.dueTotalAmount}>$2,400</Text>
       </View>
-      <TouchableOpacity activeOpacity={0.85} style={styles.payNowBtn}>
-        <Text style={styles.payNowText}>Pay Now</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -280,29 +239,11 @@ function FinancialAid() {
   );
 }
 
-// ─── Payment Plan Banner ──────────────────────────────────────────────────────
-function PaymentPlanBanner() {
-  return (
-    <TouchableOpacity activeOpacity={0.85} style={[styles.planBanner, { marginTop: 16 }]}>
-      <View style={styles.planOverlay} />
-      <View style={styles.planContent}>
-        <Text style={styles.planTitle}>Need a Payment Plan?</Text>
-        <Text style={styles.planSub}>Split your pending fees into easy monthly installments.</Text>
-        <View style={styles.planLinkRow}>
-          <Text style={styles.planLink}>Learn More</Text>
-          <Text style={styles.planArrow}> →</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function FinancialOverview() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-      <TopNav />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -331,7 +272,6 @@ export default function FinancialOverview() {
           <View style={isTablet ? styles.rightCol : styles.fullWidth}>
             <UpcomingDues />
             <FinancialAid />
-            <PaymentPlanBanner />
           </View>
         </View>
       </ScrollView>
@@ -342,64 +282,6 @@ export default function FinancialOverview() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
-
-  // ── Nav ──
-  topNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.white,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    gap: 12,
-  },
-  searchWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.bg,
-    borderRadius: 22,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 6,
-    maxWidth: isTablet ? 420 : undefined,
-  },
-  searchIconText: { fontSize: 13, color: C.muted },
-  searchInput: {
-    flex: 1,
-    fontSize: 13,
-    color: C.text,
-    padding: 0,
-  },
-  navRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconBtn: { padding: 4 },
-  navIcon: { fontSize: 16 },
-  userChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: C.bg,
-    borderRadius: 22,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  userInfo: { alignItems: 'flex-end' },
-  userName: { fontSize: 13, fontWeight: '700', color: C.dark },
-  userId: { fontSize: 10, color: C.muted },
-  userAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: C.indigo,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userAvatarText: { color: C.white, fontWeight: '800', fontSize: 12 },
 
   // ── Scroll ──
   scroll: { flex: 1 },
@@ -647,18 +529,6 @@ const styles = StyleSheet.create({
   },
   dueTotalLabel: { fontSize: 14, color: C.text, fontWeight: '600' },
   dueTotalAmount: { fontSize: 22, fontWeight: '800', color: C.indigo },
-  payNowBtn: {
-    backgroundColor: C.indigo,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: C.indigo,
-    shadowOpacity: 0.35,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 14,
-    elevation: 5,
-  },
-  payNowText: { fontSize: 15, fontWeight: '800', color: C.white, letterSpacing: 0.3 },
 
   // ── Financial Aid ──
   aidHeader: {
@@ -715,33 +585,4 @@ const styles = StyleSheet.create({
     color: C.muted,
     lineHeight: 17,
   },
-
-  // ── Payment Plan Banner ──
-  planBanner: {
-    height: 130,
-    borderRadius: 20,
-    backgroundColor: '#1F1035',
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  planOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(31,16,53,0.7)',
-  },
-  planContent: { padding: 18 },
-  planTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: C.white,
-    marginBottom: 4,
-  },
-  planSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.65)',
-    lineHeight: 16,
-    marginBottom: 8,
-  },
-  planLinkRow: { flexDirection: 'row', alignItems: 'center' },
-  planLink: { fontSize: 13, fontWeight: '700', color: C.white },
-  planArrow: { fontSize: 13, color: C.white },
 });

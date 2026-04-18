@@ -105,15 +105,6 @@ const ChevronRight = ({ color = T.grayLight, size = 16 }) => (
   </Svg>
 );
 
-const SwitchAccountIcon = ({ color = T.purple, size = 22 }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M17 3l4 4-4 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M3 7h18"        stroke={color} strokeWidth="2" strokeLinecap="round" />
-    <Path d="M7 21l-4-4 4-4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M21 17H3"       stroke={color} strokeWidth="2" strokeLinecap="round" />
-  </Svg>
-);
-
 const LogOutIcon = ({ color = T.red, size = 22 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"   stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -176,8 +167,6 @@ export default function ApplicationSettings() {
     Alert.alert("Data Visibility", "Manage data visibility settings.");
   const handleThirdParty = () =>
     Alert.alert("Third-party Apps", "Manage connected apps.");
-  const handleSwitch = () =>
-    Alert.alert("Switch Account", "Switch to a different account.");
   const handleLogOut = () =>
     Alert.alert("Log Out", "You have been logged out.");
 
@@ -393,20 +382,7 @@ export default function ApplicationSettings() {
             {/* Switch + Logout buttons */}
             <View style={styles.accountActionsRow}>
               <TouchableOpacity
-                style={styles.accountActionBtn}
-                activeOpacity={0.7}
-                onPress={handleSwitch}
-                accessibilityLabel="Switch account"
-                accessibilityRole="button"
-              >
-                <SwitchAccountIcon color={T.purple} size={22} />
-                <Text style={styles.switchAccountText}>Switch{"\n"}Account</Text>
-              </TouchableOpacity>
-
-              <View style={styles.accountActionDivider} />
-
-              <TouchableOpacity
-                style={styles.accountActionBtn}
+                style={[styles.accountActionBtn, styles.accountActionBtnSingle]}
                 activeOpacity={0.7}
                 onPress={handleLogOut}
                 accessibilityLabel="Log out"
@@ -742,17 +718,13 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     gap:            8,
   },
+  accountActionBtnSingle: {
+    flexDirection: "row",
+  },
   accountActionDivider: {
     width:           1,
     backgroundColor: T.grayBorder,
     marginVertical:  12,
-  },
-  switchAccountText: {
-    fontSize:   12,
-    fontWeight: "600",
-    color:      T.ink,
-    textAlign:  "center",
-    lineHeight: 17,
   },
   logOutText: {
     fontSize:   12,

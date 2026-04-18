@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,6 @@ import {
   Dimensions,
   SafeAreaView,
   StatusBar,
-  Animated,
-  Modal,
-  FlatList,
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -46,6 +43,9 @@ const attendanceTrend = [
   { month: 'JUL', value: 0.87 },
   { month: 'AUG', value: 0.92 },
   { month: 'SEP', value: 0.94 },
+  { month: 'OCT', value: 0.90 },
+  { month: 'NOV', value: 0.93 },
+  { month: 'DEC', value: 0.95 },
 ];
 
 const allResults = [
@@ -337,56 +337,67 @@ const StatCard = ({ label, value, badge, badgeColor }) => (
   </View>
 );
 
-const PendingFeesCard = ({ onPayNow, onViewInvoice, invoiceExpanded }) => (
-  <View style={[styles.pendingCard, isTablet && styles.pendingCardTablet]}>
-    <Text style={styles.pendingLabel}>PENDING FEES</Text>
-    <Text style={styles.pendingAmount}>₹14,500</Text>
-    <Text style={styles.pendingDue}>Due on Oct 10, 2023</Text>
-    <TouchableOpacity style={styles.payBtn} onPress={onPayNow} activeOpacity={0.8}>
-      <Text style={styles.payBtnText}>Pay Now</Text>
-    </TouchableOpacity>
-    <TouchableOpacity onPress={onViewInvoice} activeOpacity={0.7}>
-      <Text style={styles.invoiceLink}>{invoiceExpanded ? 'Hide Invoice ▲' : 'View Invoice ▼'}</Text>
-    </TouchableOpacity>
+// ─── FIX: PendingFeesCard now manages its own invoiceExpanded state
+//     This prevents the parent ScrollView from re-rendering on toggle,
+//     which was causing the scroll position to reset to the top.
+const PendingFeesCard = ({ onPayNow }) => {
+  const [invoiceExpanded, setInvoiceExpanded] = useState(false);
 
-    {invoiceExpanded && (
-      <View style={styles.invoiceExpand}>
-        <View style={styles.invoiceDivider} />
-        <View style={styles.invoiceRow}>
-          <Text style={styles.invoiceKey}>Invoice No.</Text>
-          <Text style={styles.invoiceVal}>{invoiceDetails.invoiceNo}</Text>
-        </View>
-        <View style={styles.invoiceRow}>
-          <Text style={styles.invoiceKey}>Student</Text>
-          <Text style={styles.invoiceVal}>{invoiceDetails.studentName}</Text>
-        </View>
-        <View style={styles.invoiceRow}>
-          <Text style={styles.invoiceKey}>Class</Text>
-          <Text style={styles.invoiceVal}>{invoiceDetails.class}</Text>
-        </View>
-        <View style={styles.invoiceRow}>
-          <Text style={styles.invoiceKey}>Issued</Text>
-          <Text style={styles.invoiceVal}>{invoiceDetails.issuedOn}</Text>
-        </View>
-        <View style={styles.invoiceDivider} />
-        {invoiceDetails.items.map((item, i) => (
-          <View key={i} style={styles.invoiceRow}>
-            <Text style={styles.invoiceItemLabel}>{item.label}</Text>
-            <Text style={styles.invoiceItemAmt}>{item.amount}</Text>
+  const handleToggleInvoice = useCallback(() => {
+    setInvoiceExpanded((v) => !v);
+  }, []);
+
+  return (
+    <View style={[styles.pendingCard, isTablet && styles.pendingCardTablet]}>
+      <Text style={styles.pendingLabel}>PENDING FEES</Text>
+      <Text style={styles.pendingAmount}>₹14,500</Text>
+      <Text style={styles.pendingDue}>Due on Oct 10, 2023</Text>
+      <TouchableOpacity style={styles.payBtn} onPress={onPayNow} activeOpacity={0.8}>
+        <Text style={styles.payBtnText}>Pay Now</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleToggleInvoice} activeOpacity={0.7}>
+        <Text style={styles.invoiceLink}>{invoiceExpanded ? 'Hide Invoice ▲' : 'View Invoice ▼'}</Text>
+      </TouchableOpacity>
+
+      {invoiceExpanded && (
+        <View style={styles.invoiceExpand}>
+          <View style={styles.invoiceDivider} />
+          <View style={styles.invoiceRow}>
+            <Text style={styles.invoiceKey}>Invoice No.</Text>
+            <Text style={styles.invoiceVal}>{invoiceDetails.invoiceNo}</Text>
           </View>
-        ))}
-        <View style={styles.invoiceDivider} />
-        <View style={styles.invoiceRow}>
-          <Text style={styles.invoiceTotalLabel}>TOTAL DUE</Text>
-          <Text style={styles.invoiceTotalAmt}>{invoiceDetails.total}</Text>
+          <View style={styles.invoiceRow}>
+            <Text style={styles.invoiceKey}>Student</Text>
+            <Text style={styles.invoiceVal}>{invoiceDetails.studentName}</Text>
+          </View>
+          <View style={styles.invoiceRow}>
+            <Text style={styles.invoiceKey}>Class</Text>
+            <Text style={styles.invoiceVal}>{invoiceDetails.class}</Text>
+          </View>
+          <View style={styles.invoiceRow}>
+            <Text style={styles.invoiceKey}>Issued</Text>
+            <Text style={styles.invoiceVal}>{invoiceDetails.issuedOn}</Text>
+          </View>
+          <View style={styles.invoiceDivider} />
+          {invoiceDetails.items.map((item, i) => (
+            <View key={i} style={styles.invoiceRow}>
+              <Text style={styles.invoiceItemLabel}>{item.label}</Text>
+              <Text style={styles.invoiceItemAmt}>{item.amount}</Text>
+            </View>
+          ))}
+          <View style={styles.invoiceDivider} />
+          <View style={styles.invoiceRow}>
+            <Text style={styles.invoiceTotalLabel}>TOTAL DUE</Text>
+            <Text style={styles.invoiceTotalAmt}>{invoiceDetails.total}</Text>
+          </View>
+          <View style={[styles.invoiceStatusBadge, { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
+            <Text style={[styles.invoiceStatusText, { color: COLORS.red }]}>● {invoiceDetails.status}</Text>
+          </View>
         </View>
-        <View style={[styles.invoiceStatusBadge, { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
-          <Text style={[styles.invoiceStatusText, { color: COLORS.red }]}>● {invoiceDetails.status}</Text>
-        </View>
-      </View>
-    )}
-  </View>
-);
+      )}
+    </View>
+  );
+};
 
 const AttendanceTrend = () => {
   const maxValue = Math.max(...attendanceTrend.map((d) => d.value));
@@ -473,14 +484,23 @@ const ResultCard = ({ item }) => (
   </View>
 );
 
-const AcademicResults = ({ expanded, onToggle }) => {
+// ─── FIX: AcademicResults now manages its own expanded state
+//     This prevents the parent ScrollView from re-rendering on toggle,
+//     which was causing the scroll position to reset to the top.
+const AcademicResults = () => {
+  const [expanded, setExpanded] = useState(false);
+
+  const handleToggle = useCallback(() => {
+    setExpanded((v) => !v);
+  }, []);
+
   const visibleResults = expanded ? allResults : allResults.slice(0, 2);
 
   return (
     <View style={styles.resultsCard}>
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsTitle}>Recent Academic Results</Text>
-        <TouchableOpacity onPress={onToggle} activeOpacity={0.7}>
+        <TouchableOpacity onPress={handleToggle} activeOpacity={0.7}>
           <Text style={styles.viewAll}>{expanded ? 'Show Less ▲' : 'View All Scores ▼'}</Text>
         </TouchableOpacity>
       </View>
@@ -513,9 +533,6 @@ const AnnouncementsCard = () => (
           <Text style={styles.annName}>Maria Hills</Text>
           <Text style={styles.annRole}>Activity Coordinator</Text>
         </View>
-        <TouchableOpacity style={styles.annArrowBtn} activeOpacity={0.75}>
-          <Text style={styles.annArrow}>›</Text>
-        </TouchableOpacity>
       </View>
     </View>
     <View style={styles.prevUpdates}>
@@ -549,24 +566,43 @@ const Header = () => (
 
 // ─── App Root ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [screen, setScreen] = useState('dashboard'); // 'dashboard' | 'payment' | 'reports' | 'messages' | 'prevyears'
-  const [invoiceExpanded, setInvoiceExpanded] = useState(false);
-  const [resultsExpanded, setResultsExpanded] = useState(false);
+  // FIX: Only screen navigation state lives here. Toggle states (invoice, results)
+  // have been moved into their respective child components. This prevents the
+  // parent from re-rendering (and the ScrollView from resetting its scroll
+  // position) when those toggles are tapped.
+  const [screen, setScreen] = useState('dashboard');
 
-  if (screen === 'payment') return <PaymentScreen onBack={() => setScreen('dashboard')} />;
-  if (screen === 'reports') return <DownloadReportsScreen onBack={() => setScreen('dashboard')} />;
-  if (screen === 'messages') return <MessageTeachersScreen onBack={() => setScreen('dashboard')} />;
-  if (screen === 'prevyears') return <PreviousYearsScreen onBack={() => setScreen('dashboard')} />;
+  // FIX: Use useCallback so navigation handlers are stable references
+  // and don't trigger unnecessary re-renders of child components.
+  const goToDashboard = useCallback(() => setScreen('dashboard'), []);
+  const goToPayment = useCallback(() => setScreen('payment'), []);
+  const goToReports = useCallback(() => setScreen('reports'), []);
+  const goToMessages = useCallback(() => setScreen('messages'), []);
+  const goToPrevYears = useCallback(() => setScreen('prevyears'), []);
+
+  if (screen === 'payment') return <PaymentScreen onBack={goToDashboard} />;
+  if (screen === 'reports') return <DownloadReportsScreen onBack={goToDashboard} />;
+  if (screen === 'messages') return <MessageTeachersScreen onBack={goToDashboard} />;
+  if (screen === 'prevyears') return <PreviousYearsScreen onBack={goToDashboard} />;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       <Header />
 
+      {/*
+        FIX: Added `maintainVisibleContentPosition` to prevent the ScrollView
+        from jumping to the top when child components update their internal state.
+        `nestedScrollEnabled` improves nested scroll handling on Android.
+        `keyboardShouldPersistTaps="handled"` ensures taps work correctly.
+      */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+        nestedScrollEnabled={true}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Welcome Banner */}
         <View style={styles.welcomeSection}>
@@ -581,11 +617,8 @@ export default function App() {
           <View style={styles.rowWrap}>
             <StatCard label="ATTENDANCE" value="94.2%" badge="+2.1% this month" />
             <StatCard label="LAST RANK" value="#04" badge="Class Standing" badgeColor={COLORS.subText} />
-            <PendingFeesCard
-              onPayNow={() => setScreen('payment')}
-              onViewInvoice={() => setInvoiceExpanded((v) => !v)}
-              invoiceExpanded={invoiceExpanded}
-            />
+            {/* FIX: onViewInvoice and invoiceExpanded props removed — state now lives inside PendingFeesCard */}
+            <PendingFeesCard onPayNow={goToPayment} />
           </View>
         ) : (
           <>
@@ -593,11 +626,8 @@ export default function App() {
               <StatCard label="ATTENDANCE" value="94.2%" badge="+2.1% this month" />
               <StatCard label="LAST RANK" value="#04" badge="Class Standing" badgeColor={COLORS.subText} />
             </View>
-            <PendingFeesCard
-              onPayNow={() => setScreen('payment')}
-              onViewInvoice={() => setInvoiceExpanded((v) => !v)}
-              invoiceExpanded={invoiceExpanded}
-            />
+            {/* FIX: onViewInvoice and invoiceExpanded props removed — state now lives inside PendingFeesCard */}
+            <PendingFeesCard onPayNow={goToPayment} />
           </>
         )}
 
@@ -609,9 +639,9 @@ export default function App() {
             </View>
             <View style={{ flex: 1 }}>
               <QuickActions
-                onDownload={() => setScreen('reports')}
-                onMessage={() => setScreen('messages')}
-                onPrevYears={() => setScreen('prevyears')}
+                onDownload={goToReports}
+                onMessage={goToMessages}
+                onPrevYears={goToPrevYears}
               />
             </View>
           </View>
@@ -619,9 +649,9 @@ export default function App() {
           <>
             <AttendanceTrend />
             <QuickActions
-              onDownload={() => setScreen('reports')}
-              onMessage={() => setScreen('messages')}
-              onPrevYears={() => setScreen('prevyears')}
+              onDownload={goToReports}
+              onMessage={goToMessages}
+              onPrevYears={goToPrevYears}
             />
           </>
         )}
@@ -630,7 +660,8 @@ export default function App() {
         {isTablet ? (
           <View style={styles.rowWrap}>
             <View style={{ flex: 1.6 }}>
-              <AcademicResults expanded={resultsExpanded} onToggle={() => setResultsExpanded((v) => !v)} />
+              {/* FIX: expanded and onToggle props removed — state now lives inside AcademicResults */}
+              <AcademicResults />
             </View>
             <View style={{ flex: 1 }}>
               <AnnouncementsCard />
@@ -638,7 +669,8 @@ export default function App() {
           </View>
         ) : (
           <>
-            <AcademicResults expanded={resultsExpanded} onToggle={() => setResultsExpanded((v) => !v)} />
+            {/* FIX: expanded and onToggle props removed — state now lives inside AcademicResults */}
+            <AcademicResults />
             <AnnouncementsCard />
           </>
         )}

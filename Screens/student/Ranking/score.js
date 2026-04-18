@@ -72,7 +72,6 @@ const classTop5 = [
 function TopNav() {
   return (
     <View style={styles.topNav}>
-      <Text style={styles.brand}>Academia</Text>
       {isTablet && (
         <View style={styles.navLinks}>
           {['Curriculum', 'Analytics', 'Resources', 'Faculty'].map((t, i) => (

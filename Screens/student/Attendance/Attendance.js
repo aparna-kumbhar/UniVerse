@@ -133,7 +133,6 @@ function TopNav() {
   return (
     <View style={styles.topNav}>
       <View style={styles.navLeft}>
-        <Text style={styles.navBrand}>EduAnalytics</Text>
         {isTablet && (
           <View style={styles.navLinks}>
             {['Overview', 'Reports', 'Schedule'].map((t, i) => (

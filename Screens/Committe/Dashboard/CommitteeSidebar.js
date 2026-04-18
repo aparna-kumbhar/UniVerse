@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
@@ -6,17 +5,17 @@ import {
   ScrollView, StatusBar, Platform,
 } from 'react-native';
 import Maindashboard from './Maindashboard';
+import Permissions from '../Permissions/Permission';
 
 // ─── constants ───────────────────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get('window');
-const SIDEBAR_W = 220;
+const SIDEBAR_W = 280;
 const IS_LAPTOP = SCREEN_W >= 1024;
 
 const NAV_ITEMS = [
   { key: 'Dashboard',    icon: '▦' },
-  { key: 'Analytics',    icon: '▶' },
-  { key: 'Institutes',   icon: '▣' },
-  { key: 'Registration', icon: '⊞' },
+  { key: 'Add Institutes',   icon: '▣' },
+  { key: 'Permissions', icon: '⊞' },
   { key: 'Settings',     icon: '⚙' },
 ];
 
@@ -93,10 +92,6 @@ const Sidebar = ({ navigation, activeRoute, slideAnim, onClose }) => {
             })}
           </ScrollView>
 
-          {/* Download */}
-          <TouchableOpacity style={s.downloadBtn}>
-            <Text style={s.downloadText}>↓  Download Data</Text>
-          </TouchableOpacity>
         </SafeAreaView>
       </Animated.View>
     </>
@@ -131,9 +126,12 @@ const CommitteSidebar = () => {
         {!IS_LAPTOP && (
           <TouchableOpacity
             onPress={openSidebar}
-            style={{ paddingHorizontal: 16, paddingVertical: 12 }}
+            style={s.hamburgerBtn}
+            activeOpacity={0.7}
           >
-            <Text style={{ color: '#fff', fontSize: 22 }}>☰</Text>
+            <View style={s.hamburgerLine} />
+            <View style={s.hamburgerLine} />
+            <View style={s.hamburgerLine} />
           </TouchableOpacity>
         )}
         <Text style={s.headerTitle}>Committee Dashboard</Text>
@@ -141,15 +139,7 @@ const CommitteSidebar = () => {
 
       {/* Content + Sidebar */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
-        <View style={{ flex: 1 }}>
-          {activeRoute === 'Dashboard' ? (
-            <Maindashboard />
-          ) : (
-            <PlaceholderScreen route={{ name: activeRoute }} />
-          )}
-        </View>
-
-        {/* Sidebar rendered on top of content */}
+        {/* Sidebar rendered on left side */}
         {(sidebarOpen || IS_LAPTOP) && (
           <Sidebar
             navigation={{
@@ -163,6 +153,16 @@ const CommitteSidebar = () => {
             onClose={closeSidebar}
           />
         )}
+
+        <View style={{ flex: 1 }}>
+          {activeRoute === 'Dashboard' ? (
+            <Maindashboard />  
+          ) : activeRoute === 'Permissions' ? (
+            <Permissions />
+          ) : (
+            <PlaceholderScreen route={{ name: activeRoute }} />
+          )}
+        </View>
       </View>
     </View>
   );
@@ -172,32 +172,109 @@ export default CommitteSidebar;
 
 // ─── styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root:          { flex: 1, flexDirection: 'column' },
+  root:          { flex: 1, flexDirection: 'column', backgroundColor: '#F4F6F9' },
   screen:        { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F4F6F9' },
   screenTitle:   { fontSize: 28, fontWeight: '600', color: '#1a2744' },
   screenSub:     { fontSize: 15, color: '#888', marginTop: 6 },
 
-  header:        { backgroundColor: '#1a2744', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 56, elevation: 0, shadowOpacity: 0 },
-  headerTitle:   { fontSize: 16, fontWeight: '500', color: '#fff', marginLeft: 12 },
+  // ── header (light theme) ──
+  header: {
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 14,
+    paddingBottom: 14,
+    height: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 56 : 70,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8ECF0',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1a2744',
+    letterSpacing: 0.3,
+    marginLeft: 12,
+  },
 
-  overlay:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 10 },
+  // ── hamburger (moved lower via paddingTop in header) ──
+  hamburgerBtn: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#F0F2F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+  },
+  hamburgerLine: {
+    width: 20,
+    height: 2,
+    backgroundColor: '#1a2744',
+    borderRadius: 2,
+    marginVertical: 2,
+  },
 
-  sidebar:       { backgroundColor: '#1a2744', width: SIDEBAR_W, zIndex: 20 },
+  overlay:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', zIndex: 10 },
+
+  // ── sidebar (light theme, wider) ──
+  sidebar: {
+    backgroundColor: '#FFFFFF',
+    width: SIDEBAR_W,
+    zIndex: 20,
+    borderRightWidth: 1,
+    borderRightColor: '#E8ECF0',
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   sidebarLaptop: { position: 'relative' },
   sidebarMobile: { position: 'absolute', top: 0, bottom: 0, left: 0 },
 
-  brand:         { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.12)' },
-  brandTitle:    { color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 1.2 },
-  brandSub:      { color: 'rgba(255,255,255,0.45)', fontSize: 10, letterSpacing: 1, marginTop: 2 },
+  // ── brand ──
+  brand: {
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 22,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8ECF0',
+    backgroundColor: '#F8F9FB',
+  },
+  brandTitle:    { color: '#1a2744', fontSize: 14, fontWeight: '700', letterSpacing: 1.2 },
+  brandSub:      { color: '#8A96A8', fontSize: 10, letterSpacing: 1, marginTop: 3 },
 
-  navItem:       { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, position: 'relative' },
-  navItemActive: { backgroundColor: 'rgba(255,255,255,0.08)' },
-  navIcon:       { fontSize: 14, color: 'rgba(255,255,255,0.45)', width: 22 },
-  navIconActive: { color: '#4fc3a1' },
-  navLabel:      { fontSize: 11, letterSpacing: 1.1, color: 'rgba(255,255,255,0.55)', fontWeight: '500' },
-  navLabelActive:{ color: '#fff' },
-  activeBar:     { position: 'absolute', right: 0, top: 8, bottom: 8, width: 3, backgroundColor: '#4fc3a1', borderRadius: 2 },
-
-  downloadBtn:   { margin: 16, padding: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center' },
-  downloadText:  { color: '#fff', fontSize: 13 },
+  // ── nav items ──
+  navItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 24,
+    position: 'relative',
+    marginHorizontal: 10,
+    marginVertical: 2,
+    borderRadius: 10,
+  },
+  navItemActive: {
+    backgroundColor: '#EAF4FF',
+  },
+  navIcon:        { fontSize: 15, color: '#A0AAB8', width: 26 },
+  navIconActive:  { color: '#2B6CB0' },
+  navLabel:       { fontSize: 12, letterSpacing: 1, color: '#6B7A8F', fontWeight: '500' },
+  navLabelActive: { color: '#1a2744', fontWeight: '700' },
+  activeBar: {
+    position: 'absolute',
+    right: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    backgroundColor: '#2B6CB0',
+    borderRadius: 2,
+  },
 });

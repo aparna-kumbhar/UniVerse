@@ -128,8 +128,6 @@ function TopNav({ onBack, backLabel }) {
         </TouchableOpacity>
       ) : (
         <View style={styles.navTitleBlock}>
-          <Text style={styles.navTitle}>Curator</Text>
-          <Text style={styles.navTitleBold}>Dashboard</Text>
         </View>
       )}
       {isTablet && !onBack && (

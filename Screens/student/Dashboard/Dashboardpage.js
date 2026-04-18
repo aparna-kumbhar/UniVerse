@@ -307,9 +307,6 @@ export default function Dashboard() {
     >
       {/* ── Top Bar ── */}
       <View style={[s.topbar, isMobile && s.topbarMobile]}>
-        <TouchableOpacity activeOpacity={0.75} style={[s.searchBox, isMobile && s.searchBoxMobile]}>
-          <Text style={s.searchTxt}>🔍  Search courses, materials, or events…</Text>
-        </TouchableOpacity>
         <View style={s.topbarRight}>
           
         </View>
