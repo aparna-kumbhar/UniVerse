@@ -125,21 +125,7 @@ const StatusCard = () => (
   </View>
 );
 
-const UrgentCard = ({ onPress }) => (
-  <TouchableOpacity
-    style={styles.urgentCard}
-    onPress={onPress}
-    activeOpacity={0.75}
-  >
-    <Text style={styles.urgentLabel}>QUICK ACTION</Text>
-    <Text style={styles.urgentTitle}>Urgent Updates</Text>
-    <Text style={styles.urgentBody}>4 batches have pending fee revisions for the upcoming semester.</Text>
-    <View style={styles.urgentLinkRow}>
-      <Text style={styles.urgentLink}>View Pending</Text>
-      <Text style={styles.urgentArrow}> →</Text>
-    </View>
-  </TouchableOpacity>
-);
+
 
 const BatchCard = ({ item, onPress }) => (
   <TouchableOpacity
@@ -305,10 +291,6 @@ export default function FeeManagement() {
     setFeeDetailsModalVisible(true);
   };
 
-  const handleUrgentPress = () => {
-    console.log('View Pending pressed');
-  };
-
   const handleCreateBatch = () => {
     console.log('Create New Batch pressed');
   };
@@ -359,16 +341,15 @@ export default function FeeManagement() {
         <Text style={styles.pageTitle}>Select Batch</Text>
        
 
-        {/* Status + Urgent side-by-side on tablet */}
+        {/* Status card */}
         {IS_TABLET ? (
           <View style={styles.tabletRow}>
             <View style={styles.tabletCol}><StatusCard /></View>
-            <View style={styles.tabletCol}><UrgentCard onPress={handleUrgentPress} /></View>
+            <View style={styles.tabletCol} />
           </View>
         ) : (
           <>
             <StatusCard />
-            <UrgentCard onPress={handleUrgentPress} />
           </>
         )}
 

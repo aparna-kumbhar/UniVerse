@@ -12,7 +12,6 @@ import {
   StatusBar,
   Platform,
   Dimensions,
-  Image,
   Animated,
 } from 'react-native';
 
@@ -33,6 +32,18 @@ const STUDENTS = [
   { id: '10', name: 'Meera Singh', grade: 'Class 11', avatar: '👧', enrolled: false },
   { id: '11', name: 'Vikram Bose', grade: 'Class 12', avatar: '👦', enrolled: false },
   { id: '12', name: 'Kavya Joshi', grade: 'Class 11', avatar: '👧', enrolled: false },
+  { id: '13', name: 'Ishaan Malhotra', grade: 'Class 12', avatar: '👦', enrolled: false },
+  { id: '14', name: 'Ritika Das', grade: 'Class 11', avatar: '👧', enrolled: false },
+  { id: '15', name: 'Manav Arora', grade: 'Class 12', avatar: '👦', enrolled: false },
+  { id: '16', name: 'Pooja Kulkarni', grade: 'Class 11', avatar: '👧', enrolled: false },
+  { id: '17', name: 'Harsh Vardhan', grade: 'Class 12', avatar: '👦', enrolled: false },
+  { id: '18', name: 'Diya Sethi', grade: 'Class 11', avatar: '👧', enrolled: false },
+  { id: '19', name: 'Yash Chawla', grade: 'Class 12', avatar: '👦', enrolled: false },
+  { id: '20', name: 'Sana Mirza', grade: 'Class 11', avatar: '👧', enrolled: false },
+  { id: '21', name: 'Aditya Suri', grade: 'Class 12', avatar: '👦', enrolled: false },
+  { id: '22', name: 'Nandini Rao', grade: 'Class 11', avatar: '👧', enrolled: false },
+  { id: '23', name: 'Krish Bansal', grade: 'Class 12', avatar: '👦', enrolled: false },
+  { id: '24', name: 'Tanya Khanna', grade: 'Class 11', avatar: '👧', enrolled: false },
 ];
 
 const FACULTY = [
@@ -42,12 +53,48 @@ const FACULTY = [
   { id: 'f4', name: 'Ms. Deepa Nair', subject: 'Biology HOD', exp: '8+ Yrs Exp', avatar: '👩‍🏫' },
   { id: 'f5', name: 'Dr. Pradeep Jain', subject: 'Physics', exp: '14+ Yrs Exp', avatar: '👨‍🏫' },
   { id: 'f6', name: 'Prof. Rekha Sharma', subject: 'Chemistry', exp: '11+ Yrs Exp', avatar: '👩‍🏫' },
+  { id: 'f7', name: 'Dr. Alok Verma', subject: 'Mathematics HOD', exp: '16+ Yrs Exp', avatar: '👨‍🏫' },
+  { id: 'f8', name: 'Ms. Neha Bhat', subject: 'English', exp: '9+ Yrs Exp', avatar: '👩‍🏫' },
+  { id: 'f9', name: 'Prof. Ajay Tripathi', subject: 'Organic Chemistry', exp: '13+ Yrs Exp', avatar: '👨‍🏫' },
+  { id: 'f10', name: 'Dr. Swati Pillai', subject: 'Botany', exp: '10+ Yrs Exp', avatar: '👩‍🏫' },
+  { id: 'f11', name: 'Mr. Rahul Nanda', subject: 'Physical Chemistry', exp: '7+ Yrs Exp', avatar: '👨‍🏫' },
+  { id: 'f12', name: 'Ms. Charu Anand', subject: 'Zoology', exp: '8+ Yrs Exp', avatar: '👩‍🏫' },
+];
+
+const DUMMY_BATCHES = [
+  {
+    id: 'b1',
+    name: 'NEET Achievers 2026',
+    description: 'Focused NEET prep batch with weekly mock tests and revision drills.',
+    capacity: '60',
+    startDate: '06/15/2024',
+    type: 'Regular',
+    students: [STUDENTS[0], STUDENTS[2], STUDENTS[4], STUDENTS[6], STUDENTS[8], STUDENTS[10]],
+    faculty: FACULTY[0],
+  },
+  {
+    id: 'b2',
+    name: 'JEE Sprint Crash Course',
+    description: 'High-intensity crash course for JEE Main and Advanced problem-solving.',
+    capacity: '40',
+    startDate: '07/01/2024',
+    type: 'Crash Course',
+    students: [STUDENTS[1], STUDENTS[3], STUDENTS[5], STUDENTS[7], STUDENTS[9], STUDENTS[11]],
+    faculty: FACULTY[2],
+  },
 ];
 
 // ─── Student Selector Modal ───────────────────────────────────────────────────
-const StudentModal = ({ visible, onClose, onConfirm }) => {
+const StudentModal = ({ visible, onClose, onConfirm, initialSelectedIds = [] }) => {
   const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (visible) {
+      setSelected(initialSelectedIds);
+      setSearch('');
+    }
+  }, [visible, initialSelectedIds]);
 
   const filtered = STUDENTS.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase())
@@ -101,6 +148,11 @@ const StudentModal = ({ visible, onClose, onConfirm }) => {
             style={styles.listContainer}
             numColumns={isTablet ? 2 : 1}
             key={isTablet ? 'two-col' : 'one-col'}
+            ListEmptyComponent={
+              <View style={styles.emptyListState}>
+                <Text style={styles.emptyListText}>No students found</Text>
+              </View>
+            }
             renderItem={({ item }) => {
               const isSelected = selected.includes(item.id);
               return (
@@ -156,6 +208,12 @@ const StudentModal = ({ visible, onClose, onConfirm }) => {
 const FacultyModal = ({ visible, onClose, onSelect }) => {
   const [search, setSearch] = useState('');
 
+  useEffect(() => {
+    if (visible) {
+      setSearch('');
+    }
+  }, [visible]);
+
   const filtered = FACULTY.filter(f =>
     f.name.toLowerCase().includes(search.toLowerCase()) ||
     f.subject.toLowerCase().includes(search.toLowerCase())
@@ -199,6 +257,11 @@ const FacultyModal = ({ visible, onClose, onSelect }) => {
             data={filtered}
             keyExtractor={item => item.id}
             style={styles.listContainer}
+            ListEmptyComponent={
+              <View style={styles.emptyListState}>
+                <Text style={styles.emptyListText}>No faculty found</Text>
+              </View>
+            }
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.facultyRow}
@@ -238,6 +301,18 @@ const CreateBatchModal = ({ visible, onClose, onConfirm, editingBatch, onStudent
   const [slideAnim] = useState(new Animated.Value(600));
 
   useEffect(() => {
+    if (!visible) return;
+
+    setBatchName(editingBatch?.name || '');
+    setDescription(editingBatch?.description || '');
+    setCapacity(editingBatch?.capacity || '60');
+    setStartDate(editingBatch?.startDate || '06/15/2024');
+    setSelectedSpec(editingBatch?.type ? [editingBatch.type] : ['Regular']);
+    setSelectedStudents(editingBatch?.students || []);
+    setSelectedFaculty(editingBatch?.faculty || null);
+  }, [visible, editingBatch]);
+
+  useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
         toValue: 0,
@@ -254,7 +329,13 @@ const CreateBatchModal = ({ visible, onClose, onConfirm, editingBatch, onStudent
   }, [visible]);
 
   const toggleSpec = (spec) => {
-    setSelectedSpec(prev => [spec]); // Only allow one type
+    setSelectedSpec([spec]);
+  };
+
+  const handleClose = () => {
+    setStudentModalVisible(false);
+    setFacultyModalVisible(false);
+    onClose();
   };
 
   const handleConfirm = () => {
@@ -312,7 +393,7 @@ const CreateBatchModal = ({ visible, onClose, onConfirm, editingBatch, onStudent
             <Text style={styles.createBatchModalTitle}>
               {editingBatch ? 'Edit Batch' : 'Create New Batch'}
             </Text>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -382,39 +463,7 @@ const CreateBatchModal = ({ visible, onClose, onConfirm, editingBatch, onStudent
             </View>
 
             {/* Faculty */}
-            <View style={styles.createBatchSection}>
-              <Text style={styles.createBatchLabel}>Lead Faculty</Text>
-              {selectedFaculty ? (
-                <View style={styles.selectedFacultyCard}>
-                  <View style={styles.facultyAvatarWrapSm}>
-                    <Text style={{ fontSize: 22 }}>{selectedFaculty.avatar}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.selectedFacultyName}>{selectedFaculty.name}</Text>
-                    <Text style={styles.selectedFacultyMeta}>
-                      {selectedFaculty.subject} • {selectedFaculty.exp}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setFacultyModalVisible(true)}
-                    style={styles.changeBtn}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.changeBtnText}>Change</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.facultySearchBtn}
-                  onPress={() => setFacultyModalVisible(true)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.searchIcon2}>🔍</Text>
-                  <Text style={styles.facultySearchText}>Search and select faculty...</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
+          
             {/* Capacity & Date */}
             <View style={styles.createBatchSection}>
               <View style={[styles.row, { gap: 12 }]}>
@@ -461,7 +510,7 @@ const CreateBatchModal = ({ visible, onClose, onConfirm, editingBatch, onStudent
 
           {/* Footer */}
           <View style={styles.createBatchModalFooter}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -481,6 +530,7 @@ const CreateBatchModal = ({ visible, onClose, onConfirm, editingBatch, onStudent
       <StudentModal
         visible={studentModalVisible}
         onClose={() => setStudentModalVisible(false)}
+        initialSelectedIds={selectedStudents.map((student) => student.id)}
         onConfirm={(students) => setSelectedStudents(students)}
       />
       <FacultyModal
@@ -573,7 +623,7 @@ const BatchCard = ({ batch, onEdit, onDelete }) => {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function Batchcreation({ navigation }) {
-  const [batches, setBatches] = useState([]);
+  const [batches, setBatches] = useState(DUMMY_BATCHES);
   const [createBatchModalVisible, setCreateBatchModalVisible] = useState(false);
   const [editingBatch, setEditingBatch] = useState(null);
 
@@ -1078,6 +1128,16 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: '#111827' },
 
   listContainer: { flex: 1, paddingHorizontal: 12 },
+  emptyListState: {
+    paddingVertical: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyListText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
 
   studentRow: {
     flex: 1,

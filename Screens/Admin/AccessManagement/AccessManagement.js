@@ -5,12 +5,12 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Image,
   SafeAreaView,
   StatusBar,
   Dimensions,
   Platform,
   TextInput,
+  Modal,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -84,6 +84,84 @@ const FACULTY = [
   },
 ];
 
+const STUDENTS = [
+  {
+    id: 101,
+    name: 'Aarav Menon',
+    role: 'GRADE 12 · SCIENCE',
+    department: 'Batch 12A',
+    joined: '08 Jun 2022',
+    lastActive: '10m ago',
+    accessLevel: 'Departmental',
+    credentialId: 'STD-1201-AM',
+    featured: true,
+    avatarBg: '#2B5D8A',
+  },
+  {
+    id: 102,
+    name: 'Nisha Kapoor',
+    role: 'GRADE 11 · COMMERCE',
+    department: 'Batch 11C',
+    joined: '12 Jul 2023',
+    lastActive: '1h ago',
+    accessLevel: 'Full Access',
+    credentialId: 'STD-1124-NK',
+    featured: false,
+    avatarBg: '#556B2F',
+  },
+  {
+    id: 103,
+    name: 'Rahul Bhatia',
+    role: 'GRADE 10 · HUMANITIES',
+    department: 'Batch 10B',
+    joined: '04 May 2023',
+    lastActive: '30m ago',
+    accessLevel: 'Restricted',
+    credentialId: 'STD-1092-RB',
+    featured: false,
+    avatarBg: '#5E4B8B',
+  },
+];
+
+const PARENTS = [
+  {
+    id: 201,
+    name: 'Priya Menon',
+    role: 'PARENT · AARAV MENON',
+    department: 'Batch 12A',
+    joined: '08 Jun 2022',
+    lastActive: '2h ago',
+    accessLevel: 'Departmental',
+    credentialId: 'PAR-2201-PM',
+    featured: true,
+    avatarBg: '#7A4E2D',
+  },
+  {
+    id: 202,
+    name: 'Karan Kapoor',
+    role: 'PARENT · NISHA KAPOOR',
+    department: 'Batch 11C',
+    joined: '12 Jul 2023',
+    lastActive: '5h ago',
+    accessLevel: 'Full Access',
+    credentialId: 'PAR-2277-KK',
+    featured: false,
+    avatarBg: '#3E6B6F',
+  },
+  {
+    id: 203,
+    name: 'Sonal Bhatia',
+    role: 'PARENT · RAHUL BHATIA',
+    department: 'Batch 10B',
+    joined: '04 May 2023',
+    lastActive: '1d ago',
+    accessLevel: 'Restricted',
+    credentialId: 'PAR-2314-SB',
+    featured: false,
+    avatarBg: '#6A3E55',
+  },
+];
+
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: '▦' },
   { label: 'Access Management', icon: '🔐', active: true },
@@ -93,6 +171,12 @@ const NAV_ITEMS = [
 ];
 
 const TABS = ['Teachers', 'Students', 'Parents'];
+
+const INITIAL_RECORDS_BY_TAB = {
+  Teachers: FACULTY,
+  Students: STUDENTS,
+  Parents: PARENTS,
+};
 
 // ─── Avatar Placeholder ───────────────────────────────────────────────────────
 const AvatarPlaceholder = ({ name, size = 48, bg = '#2D4A3E' }) => {
@@ -386,23 +470,77 @@ const MobileBottomNav = ({ active = 'Access Management', onPress }) => {
   );
 };
 
+const ProfileModal = ({ visible, person, onClose }) => {
+  if (!person) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.profileModalOverlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <View style={styles.profileModalCard}>
+          <View style={styles.profileModalHeader}>
+            <Text style={styles.profileModalTitle}>Profile Details</Text>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.8}>
+              <Text style={styles.profileModalClose}>Close</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.profileTopRow}>
+            <AvatarPlaceholder name={person.name} size={58} bg={person.avatarBg} />
+            <View style={styles.profileTopText}>
+              <Text style={styles.profileName}>{person.name}</Text>
+              <Text style={styles.profileRole}>{person.role}</Text>
+            </View>
+          </View>
+
+          <View style={styles.profileMetaGrid}>
+            <Text style={styles.profileMetaItem}>Department: {person.department}</Text>
+            <Text style={styles.profileMetaItem}>Joined: {person.joined}</Text>
+            <Text style={styles.profileMetaItem}>Last Active: {person.lastActive}</Text>
+            <Text style={styles.profileMetaItem}>Access: {person.accessLevel}</Text>
+            <Text style={styles.profileMetaItem}>Credential ID: {person.credentialId}</Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 const AccessManagementScreen = () => {
   const [activeTab, setActiveTab] = useState('Teachers'); 
   const [searchQuery, setSearchQuery] = useState('');
+  const [recordsByTab, setRecordsByTab] = useState(INITIAL_RECORDS_BY_TAB);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
-  // Filter faculty based on search query
-  const filteredFaculty = FACULTY.filter((faculty) =>
+  const currentRecords = recordsByTab[activeTab] || [];
+
+  const filteredFaculty = currentRecords.filter((faculty) =>
     faculty.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     faculty.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faculty.credentialId.toLowerCase().includes(searchQuery.toLowerCase())
+    faculty.credentialId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    faculty.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const featured = filteredFaculty.length > 0 ? filteredFaculty[0] : FACULTY[0];
+  const featured = filteredFaculty.length > 0 ? filteredFaculty[0] : null;
   const smallCards = filteredFaculty.length > 1 ? filteredFaculty.slice(1) : (filteredFaculty.length === 0 ? [] : []);
 
-  const handleView = (faculty) => console.log('View profile:', faculty.name);
-  const handleRemove = (faculty) => console.log('Remove access:', faculty.name);
+  const handleView = (faculty) => {
+    setSelectedProfile(faculty);
+    setShowProfileModal(true);
+  };
+
+  const handleRemove = (faculty) => {
+    setRecordsByTab((prev) => ({
+      ...prev,
+      [activeTab]: (prev[activeTab] || []).filter((p) => p.id !== faculty.id),
+    }));
+    if (selectedProfile?.id === faculty.id) {
+      setShowProfileModal(false);
+      setSelectedProfile(null);
+    }
+  };
 
   if (isTabletOrDesktop) {
     // ── Desktop / Tablet Layout ──────────────────────────────────────────────
@@ -449,15 +587,15 @@ const AccessManagementScreen = () => {
               </View>
 
               {/* No Results Message */}
-              {filteredFaculty.length === 0 && searchQuery !== '' && (
+              {filteredFaculty.length === 0 && (
                 <View style={styles.noResultsContainer}>
                   <Text style={styles.noResultsIcon}>🔍</Text>
-                  <Text style={styles.noResultsTitle}>No faculty members found</Text>
-                  <Text style={styles.noResultsDesc}>Try searching with a different name or credential ID</Text>
+                  <Text style={styles.noResultsTitle}>No {activeTab.toLowerCase()} found</Text>
+                  <Text style={styles.noResultsDesc}>Try searching with a different name, role, or credential ID</Text>
                 </View>
               )}
 
-              {filteredFaculty.length > 0 && (
+              {featured && (
                 <>
                   <View style={styles.desktopTopRow}>
                     <View style={styles.desktopFeaturedWrap}>
@@ -484,6 +622,12 @@ const AccessManagementScreen = () => {
             </ScrollView>
           </View>
         </View>
+
+        <ProfileModal
+          visible={showProfileModal}
+          person={selectedProfile}
+          onClose={() => setShowProfileModal(false)}
+        />
       </SafeAreaView>
     );
   }
@@ -529,15 +673,15 @@ const AccessManagementScreen = () => {
         
 
         {/* No Results Message */}
-        {filteredFaculty.length === 0 && searchQuery !== '' && (
+        {filteredFaculty.length === 0 && (
           <View style={styles.noResultsContainer}>
             <Text style={styles.noResultsIcon}>🔍</Text>
-            <Text style={styles.noResultsTitle}>No faculty members found</Text>
-            <Text style={styles.noResultsDesc}>Try searching with a different name or credential ID</Text>
+            <Text style={styles.noResultsTitle}>No {activeTab.toLowerCase()} found</Text>
+            <Text style={styles.noResultsDesc}>Try searching with a different name, role, or credential ID</Text>
           </View>
         )}
 
-        {filteredFaculty.length > 0 && (
+        {featured && (
           <>
         {/* Featured Card */}
         <FeaturedCard faculty={featured} onView={handleView} onRemove={handleRemove} />
@@ -556,6 +700,12 @@ const AccessManagementScreen = () => {
         )}
         <View style={{ height: 80 }} />
       </ScrollView>
+
+      <ProfileModal
+        visible={showProfileModal}
+        person={selectedProfile}
+        onClose={() => setShowProfileModal(false)}
+      />
 
     </SafeAreaView>
   );
@@ -901,6 +1051,65 @@ desktopTopRow: { marginBottom: 20 },
   bottomNavIconActive: { tintColor: COLORS.primary },
   bottomNavLabel: { fontSize: 9, color: COLORS.textLight, fontWeight: '500' },
   bottomNavLabelActive: { color: COLORS.primary, fontWeight: '700' },
+
+  profileModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  profileModalCard: {
+    width: '100%',
+    maxWidth: 520,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 18,
+  },
+  profileModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  profileModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.textDark,
+  },
+  profileModalClose: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  profileTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+  },
+  profileTopText: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textDark,
+  },
+  profileRole: {
+    fontSize: 12,
+    color: COLORS.textMid,
+    marginTop: 2,
+  },
+  profileMetaGrid: {
+    gap: 8,
+  },
+  profileMetaItem: {
+    fontSize: 13,
+    color: COLORS.textDark,
+  },
 });
 
 export default AccessManagementScreen;

@@ -231,20 +231,7 @@ function RegisterCard() {
     ? (SCREEN_WIDTH - 48) / 2
     : SCREEN_WIDTH - 32;
 
-  return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      style={[styles.registerCard, { width: cardWidth }]}
-    >
-      <View style={styles.plusCircle}>
-        <Text style={styles.plusText}>＋</Text>
-      </View>
-      <Text style={styles.registerTitle}>Register New Batch</Text>
-      <Text style={styles.registerSub}>
-        Initialize a new academic cohort for the current session.
-      </Text>
-    </TouchableOpacity>
-  );
+ 
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────

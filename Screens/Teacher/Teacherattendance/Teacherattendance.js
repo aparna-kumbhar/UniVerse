@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Dimensions,
   Platform,
+  Modal,
 } from 'react-native';
 import { Animated } from 'react-native';
 
@@ -248,8 +249,28 @@ const MainContent = () => {
   const [reason, setReason] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [dropdownOpen, setDropdownOpen] = useState(false);
- const [showAllHistory, setShowAllHistory] = useState(false); 
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const historySlideY = useRef(new Animated.Value(420)).current;
   const leaveTypes = ['Casual Leave', 'Medical Leave', 'Annual Leave', 'Sabbatical'];
+
+  const openHistorySheet = () => {
+    setShowAllHistory(true);
+    Animated.timing(historySlideY, {
+      toValue: 0,
+      duration: 260,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeHistorySheet = () => {
+    Animated.timing(historySlideY, {
+      toValue: 420,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setShowAllHistory(false);
+    });
+  };
 
   const formatMonth = (date) => {
   return date.toLocaleString('default', {
@@ -271,6 +292,7 @@ const goToPrevMonth = () => {
 };
 
   return (
+    <>
     <ScrollView style={styles.mainScroll} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.topBar}>
@@ -347,7 +369,7 @@ const goToPrevMonth = () => {
           {/* Recent History */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent History</Text>
-            <TouchableOpacity activeOpacity={0.7}>
+            <TouchableOpacity activeOpacity={0.7} onPress={openHistorySheet}>
               <Text style={styles.viewAll}>View All</Text>
             </TouchableOpacity>
           </View>
@@ -454,12 +476,7 @@ const goToPrevMonth = () => {
             />
 
             {/* Info Banner */}
-            <View style={styles.infoBanner}>
-              <Text style={styles.infoIcon}>ℹ️</Text>
-              <Text style={styles.infoText}>
-                Requests for sabbatical must be submitted 30 days in advance.
-              </Text>
-            </View>
+            
 
             {/* Submit Button */}
             <TouchableOpacity
@@ -487,6 +504,47 @@ const goToPrevMonth = () => {
 
       <View style={{ height: isTabletOrDesktop ? 32 : 100 }} />
     </ScrollView>
+    <Modal
+      visible={showAllHistory}
+      transparent
+      animationType="none"
+      onRequestClose={closeHistorySheet}
+    >
+      <View style={styles.historyModalOverlay}>
+        <TouchableOpacity
+          style={styles.historyModalBackdrop}
+          activeOpacity={1}
+          onPress={closeHistorySheet}
+        />
+
+        <Animated.View
+          style={[
+            styles.historySheet,
+            { transform: [{ translateY: historySlideY }] },
+          ]}
+        >
+          <View style={styles.sheetHandle} />
+
+          <View style={styles.historySheetHeader}>
+            <Text style={styles.historySheetTitle}>All Leave History</Text>
+            <TouchableOpacity onPress={closeHistorySheet} activeOpacity={0.7}>
+              <Text style={styles.historyCloseBtn}>Close</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={styles.historySheetScroll}
+            contentContainerStyle={styles.historySheetScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {LEAVE_HISTORY.map((item) => (
+              <LeaveCard key={`full-${item.id}`} item={item} />
+            ))}
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </Modal>
+    </>
   );
 };
 
@@ -1128,5 +1186,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#78350f',
     lineHeight: 18,
+  },
+
+  // ── History Bottom Sheet ──
+  historyModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'flex-end',
+  },
+  historyModalBackdrop: {
+    flex: 1,
+  },
+  historySheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    maxHeight: '75%',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  sheetHandle: {
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: COLORS.lightGray,
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
+  historySheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+    marginBottom: 8,
+  },
+  historySheetTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  historyCloseBtn: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  historySheetScroll: {
+    flexGrow: 0,
+  },
+  historySheetScrollContent: {
+    paddingBottom: Platform.OS === 'ios' ? 30 : 18,
   },
 });

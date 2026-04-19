@@ -229,10 +229,12 @@ const Attendancemark = () => {
          
               <View style={styles.sessionIdRow}>
                
-              <Text style={styles.sessionTitle}>Advanced Fluid{'\n'}Mechanics</Text>
+              <Text style={styles.sessionTitle} numberOfLines={1} ellipsizeMode="tail">
+                Advanced Fluid Mechanics
+              </Text>
               <View style={styles.dateRow}>
                 <Text style={styles.dateIcon}>🗓</Text>
-                <Text style={styles.dateText}>Monday, October 14, 2024</Text>
+        
                 <View style={styles.liveBadge}>
                   <View style={styles.liveDot} />
                   <Text style={styles.liveText}>LIVE</Text>
@@ -482,10 +484,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   sessionTitle: {
-    fontSize: isLaptop ? 36 : 28,
+    fontSize: isLaptop ? 28 : 20,
     fontWeight: '800',
     color: '#111827',
-    lineHeight: isLaptop ? 44 : 36,
+    lineHeight: isLaptop ? 34 : 26,
     marginBottom: 10,
   },
   dateRow: {

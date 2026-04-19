@@ -440,7 +440,7 @@ function MainContent({
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Uploads</Text>
             <TouchableOpacity activeOpacity={0.7} onPress={closeAll}>
-              <Text style={styles.viewArchive}>VIEW ARCHIVE</Text>
+            
             </TouchableOpacity>
           </View>
 

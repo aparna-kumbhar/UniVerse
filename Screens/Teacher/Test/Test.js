@@ -941,24 +941,7 @@ function TestHome({ navigation, route }) {
                 </View>
 
                 {/* Curator Insights */}
-                <View style={styles.curatorCard}>
-                  <View style={styles.curatorHeader}>
-                    <View style={styles.curatorIcon}>
-                      <Icon name="curator" size={14} color={C.white} />
-                    </View>
-                    <Text style={styles.curatorTitle}>Curator Insights</Text>
-                  </View>
-                  <Text style={styles.curatorQuote}>
-                    "Assessment quality has increased by 14% this semester following
-                    the implementation of multi-step logic validation."
-                  </Text>
-                  <View style={styles.curatorFooter}>
-                    <Text style={styles.reportId}>REPORT ID: SC-992</Text>
-                    <TouchableOpacity activeOpacity={0.7}>
-                      <Text style={styles.downloadLink}>Download PDF</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                
 
               </View>
             </View>

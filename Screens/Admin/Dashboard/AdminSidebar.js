@@ -268,6 +268,7 @@ export default function AdminSidebar() {
   const [activeKey,   setActiveKey]   = useState('Dashboard');
   const [drawerOpen,  setDrawerOpen]  = useState(false);
   const [collapsed,   setCollapsed]   = useState(false);
+  const [databaseInitialPortal, setDatabaseInitialPortal] = useState(null);
 
   const handleNewSession = () => {
     console.log('Admin new session triggered');
@@ -285,10 +286,29 @@ export default function AdminSidebar() {
     setActiveKey(key);
   };
 
+  const handleManageAssignmentsNavigate = () => {
+    setActiveKey('Batchselection');
+  };
+
+  const handlePerformanceFeedbackNavigate = () => {
+    setActiveKey('Feedback');
+  };
+
+  const handleOpenDatabaseFor = (portalType) => {
+    setDatabaseInitialPortal(portalType);
+    setActiveKey('Database');
+  };
+
   const renderActiveContent = () => {
     switch (activeKey) {
       case 'Dashboard':
-        return <Maindashboard />;
+        return (
+          <Maindashboard
+            onManageAssignmentsNavigate={handleManageAssignmentsNavigate}
+            onPerformanceFeedbackNavigate={handlePerformanceFeedbackNavigate}
+            onOpenDatabaseFor={handleOpenDatabaseFor}
+          />
+        );
       case 'AccessManagement':
         return <AccessManagement />;
       case 'Batchcreation':
@@ -298,7 +318,7 @@ export default function AdminSidebar() {
       case 'Feedback':
         return <Feedback />;
       case 'Database':
-        return <Database />;
+        return <Database initialPortal={databaseInitialPortal} />;
       case 'FeeManagement':
         return <FeeManagement />;
       case 'Support':

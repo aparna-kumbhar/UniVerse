@@ -329,10 +329,14 @@ export default function sidebar({ onLogout, navigation }) {
     setActiveKey('attendance');
   };
 
+  const handleOpenScheduleFromDashboard = () => {
+    setActiveKey('schedules');
+  };
+
   const renderActiveContent = () => {
     switch (activeKey) {
       case 'dashboard':
-        return <Dashboardpage />;
+        return <Dashboardpage onOpenFullCalendar={handleOpenScheduleFromDashboard} />;
       case 'profile':
         return <Profile />;
       case 'schedules':

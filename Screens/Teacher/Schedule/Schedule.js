@@ -4,6 +4,7 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   SafeAreaView,
   useWindowDimensions,
@@ -166,7 +167,7 @@ function SpotlightCard({ onTakeAttendance }) {
   );
 }
 
-function WeekGrid({ isDesktop }) {
+function WeekGrid({ isDesktop, days, isEditing, onSessionFieldChange }) {
   const [checklist, setChecklist] = useState(CHECKLIST);
 
   const toggleCheck = (id) =>
@@ -188,7 +189,7 @@ function WeekGrid({ isDesktop }) {
         {/* Days */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.daysRow}>
-            {DAYS.map((d) => (
+            {days.map((d, dayIndex) => (
               <View key={d.date} style={[styles.dayCol, d.isToday && styles.dayColToday]}>
                 <Text style={[styles.dayDate, d.isToday && styles.dayDateToday]}>{d.date}</Text>
                 <Text style={[styles.dayName, d.isToday && styles.dayNameToday]}>{d.day}</Text>
@@ -199,13 +200,41 @@ function WeekGrid({ isDesktop }) {
                       s.tag === 'NOW' && styles.sessionCardNow]}
                     activeOpacity={0.8}
                   >
-                    {s.tag === 'NOW' ? (
-                      <View style={styles.nowBadge}><Text style={styles.nowBadgeText}>NOW</Text></View>
+                    {isEditing ? (
+                      <View>
+                        <TextInput
+                          value={s.time}
+                          onChangeText={(value) => onSessionFieldChange(dayIndex, i, 'time', value)}
+                          style={styles.sessionInputTime}
+                          placeholder="Time"
+                          placeholderTextColor={C.textMuted}
+                        />
+                        <TextInput
+                          value={s.title}
+                          onChangeText={(value) => onSessionFieldChange(dayIndex, i, 'title', value)}
+                          style={styles.sessionInputTitle}
+                          placeholder="Session title"
+                          placeholderTextColor={C.textMuted}
+                        />
+                        <TextInput
+                          value={s.loc}
+                          onChangeText={(value) => onSessionFieldChange(dayIndex, i, 'loc', value)}
+                          style={styles.sessionInputLoc}
+                          placeholder="Location"
+                          placeholderTextColor={C.textMuted}
+                        />
+                      </View>
                     ) : (
-                      <Text style={[styles.sessionTime, { color: s.color }]}>{s.time}</Text>
+                      <View>
+                        {s.tag === 'NOW' ? (
+                          <View style={styles.nowBadge}><Text style={styles.nowBadgeText}>NOW</Text></View>
+                        ) : (
+                          <Text style={[styles.sessionTime, { color: s.color }]}>{s.time}</Text>
+                        )}
+                        <Text style={styles.sessionTitle}>{s.title}</Text>
+                        {!!s.loc && <Text style={styles.sessionLoc}>{s.loc}</Text>}
+                      </View>
                     )}
-                    <Text style={styles.sessionTitle}>{s.title}</Text>
-                    {!!s.loc && <Text style={styles.sessionLoc}>{s.loc}</Text>}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -265,9 +294,44 @@ function WeekGrid({ isDesktop }) {
 export default function Schedule({ onTakeAttendanceNavigate }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
+  const cloneDays = (sourceDays) => sourceDays.map((day) => ({
+    ...day,
+    sessions: day.sessions.map((session) => ({ ...session })),
+  }));
+  const [weekData, setWeekData] = useState(() => cloneDays(DAYS));
+  const [weekDraft, setWeekDraft] = useState(() => cloneDays(DAYS));
+  const [isEditingWeek, setIsEditingWeek] = useState(false);
 
   const goToAttendanceMark = () => {
     onTakeAttendanceNavigate?.();
+  };
+
+  const handleStartModify = () => {
+    setWeekDraft(cloneDays(weekData));
+    setIsEditingWeek(true);
+  };
+
+  const handleSaveModify = () => {
+    setWeekData(cloneDays(weekDraft));
+    setIsEditingWeek(false);
+  };
+
+  const handleCancelModify = () => {
+    setWeekDraft(cloneDays(weekData));
+    setIsEditingWeek(false);
+  };
+
+  const handleSessionFieldChange = (dayIndex, sessionIndex, field, value) => {
+    setWeekDraft((prev) => prev.map((day, dIdx) => {
+      if (dIdx !== dayIndex) return day;
+      return {
+        ...day,
+        sessions: day.sessions.map((session, sIdx) => {
+          if (sIdx !== sessionIndex) return session;
+          return { ...session, [field]: value };
+        }),
+      };
+    }));
   };
 
 
@@ -296,9 +360,23 @@ export default function Schedule({ onTakeAttendanceNavigate }) {
               <Text style={styles.pageTitle}>Active Learning</Text>
             </View>
             <View style={styles.headerBtns}>
-             
-              <TouchableOpacity style={styles.modifyBtn} activeOpacity={0.85}>
-                <Text style={styles.modifyBtnText}>✏  Modify Schedule</Text>
+              {isEditingWeek && (
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  activeOpacity={0.85}
+                  onPress={handleCancelModify}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.modifyBtn}
+                activeOpacity={0.85}
+                onPress={isEditingWeek ? handleSaveModify : handleStartModify}
+              >
+                <Text style={styles.modifyBtnText}>
+                  {isEditingWeek ? 'Save Schedule' : '✏  Modify Schedule'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -307,7 +385,12 @@ export default function Schedule({ onTakeAttendanceNavigate }) {
           <SpotlightCard onTakeAttendance={goToAttendanceMark} />
 
           {/* Week Grid + Curator */}
-          <WeekGrid isDesktop={isDesktop} />
+          <WeekGrid
+            isDesktop={isDesktop}
+            days={isEditingWeek ? weekDraft : weekData}
+            isEditing={isEditingWeek}
+            onSessionFieldChange={handleSessionFieldChange}
+          />
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -396,6 +479,11 @@ const styles = StyleSheet.create({
     backgroundColor: C.primary, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8,
   },
   modifyBtnText: { fontSize: 13, fontWeight: '700', color: C.white },
+  cancelBtn: {
+    borderWidth: 1, borderColor: C.border, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8,
+    backgroundColor: C.white,
+  },
+  cancelBtnText: { fontSize: 13, fontWeight: '700', color: C.text },
 
   // Spotlight Card
   spotlightCard: {
@@ -459,6 +547,40 @@ const styles = StyleSheet.create({
   sessionTime: { fontSize: 10, fontWeight: '700', marginBottom: 2 },
   sessionTitle: { fontSize: 12, fontWeight: '700', color: C.text },
   sessionLoc: { fontSize: 11, color: C.textMuted, marginTop: 2 },
+  sessionInputTime: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 6,
+    backgroundColor: C.white,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    fontSize: 10,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 6,
+  },
+  sessionInputTitle: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 6,
+    backgroundColor: C.white,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: 6,
+  },
+  sessionInputLoc: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 6,
+    backgroundColor: C.white,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    fontSize: 11,
+    color: C.text,
+  },
   nowBadge: { backgroundColor: C.primary, borderRadius: 4, alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, marginBottom: 4 },
   nowBadgeText: { color: C.white, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
 

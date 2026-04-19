@@ -83,6 +83,14 @@ const ACTIVITIES = [
   { title: 'Curriculum Audit',       sub: 'Semester 2 · Review Complete'       },
 ];
 
+const NOTIFICATIONS = [
+  { id: 'N-1001', title: 'Outstanding Fee Alert', detail: '42 student accounts need urgent follow-up.', time: '5m ago', level: 'high' },
+  { id: 'N-1002', title: 'Faculty Onboarding Approved', detail: 'Dr. Sarah Vance profile was verified successfully.', time: '22m ago', level: 'normal' },
+  { id: 'N-1003', title: 'Access Control Update', detail: '3 new permission changes were applied in Access Management.', time: '1h ago', level: 'normal' },
+  { id: 'N-1004', title: 'Low Attendance Warning', detail: 'Biology batch attendance dropped below 60%.', time: '2h ago', level: 'high' },
+  { id: 'N-1005', title: 'Monthly Revenue Snapshot Ready', detail: 'Finance hub report is available for review.', time: 'Today', level: 'normal' },
+];
+
 // ═══════════════════════════════════════════════════════════════
 // SMALL COMPONENTS
 // ═══════════════════════════════════════════════════════════════
@@ -228,10 +236,15 @@ function SidebarContent({ active, onSelect }) {
 // ═══════════════════════════════════════════════════════════════
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════
-export default function Maindashboard() {
+export default function Maindashboard({
+  onManageAssignmentsNavigate,
+  onPerformanceFeedbackNavigate,
+  onOpenDatabaseFor,
+}) {
   const [activeNav,  setActiveNav]  = useState('performance');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleNavSelect = (id) => {
     setActiveNav(id);
@@ -259,6 +272,48 @@ export default function Maindashboard() {
             <SidebarContent active={activeNav} onSelect={handleNavSelect} />
           </View>
         </View>
+      </Modal>
+
+      <Modal
+        visible={notificationsOpen}
+        animationType="slide"
+        onRequestClose={() => setNotificationsOpen(false)}
+      >
+        <SafeAreaView style={S.notificationsPage}>
+          <StatusBar barStyle="dark-content" backgroundColor={T.white} />
+
+          <View style={S.notificationsHeader}>
+            <View>
+              <Text style={S.notificationsTitle}>All Notifications</Text>
+              <Text style={S.notificationsSub}>Latest alerts and system messages</Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              style={S.closeNotificationsBtn}
+              onPress={() => setNotificationsOpen(false)}
+            >
+              <Text style={S.closeNotificationsTxt}>Close</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={S.notificationsScroll}
+            contentContainerStyle={S.notificationsScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {NOTIFICATIONS.map((item) => (
+              <View key={item.id} style={S.notificationCard}>
+                <View style={S.notificationTopRow}>
+                  <View style={[S.notificationDot, item.level === 'high' && S.notificationDotHigh]} />
+                  <Text style={S.notificationCardTitle}>{item.title}</Text>
+                  <Text style={S.notificationTime}>{item.time}</Text>
+                </View>
+                <Text style={S.notificationDetail}>{item.detail}</Text>
+                <Text style={S.notificationId}>{item.id}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
 
       <View style={S.root}>
@@ -352,7 +407,10 @@ export default function Maindashboard() {
                       <Text style={S.alertCount}>42</Text>
                       <Text style={S.alertPending}>Pending</Text>
                     </View>
-                    <TouchableOpacity activeOpacity={0.75}>
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      onPress={() => setNotificationsOpen(true)}
+                    >
                       <Text style={S.alertLink}>View All{'\n'}Notifications</Text>
                     </TouchableOpacity>
                   </View>
@@ -368,7 +426,11 @@ export default function Maindashboard() {
               <View style={[S.card, IS_TABLET && S.flex1]}>
                 <View style={S.cRow}>
                   <CardTitle title="Lecturer Allotment Registry" />
-                  <TouchableOpacity activeOpacity={0.75} style={S.btnOutlineSm}>
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    style={S.btnOutlineSm}
+                    onPress={onManageAssignmentsNavigate}
+                  >
                     <Text style={S.btnOutlineSmTxt}>✎ Manage Assignments</Text>
                   </TouchableOpacity>
                 </View>
@@ -397,28 +459,43 @@ export default function Maindashboard() {
 
                 {/* Performance Feedback */}
                 <View style={S.card}>
-                  <CardTitle
-                    title="Performance Feedback"
-                    subtitle="Aggregated student reviews from the last evaluation cycle across all 12 departments."
-                  />
+                  <TouchableOpacity activeOpacity={0.8} onPress={onPerformanceFeedbackNavigate}>
+                    <CardTitle
+                      title="Performance Feedback"
+                      subtitle="Aggregated student reviews from the last evaluation cycle across all 12 departments."
+                    />
+                  </TouchableOpacity>
                 </View>
 
                 {/* Access Management */}
                 <View style={S.card}>
                   <CardTitle title="Access Management Console" />
                   <View style={S.accessRow}>
-                    <TouchableOpacity activeOpacity={0.75} style={S.accessBtn}>
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      style={S.accessBtn}
+                      onPress={() => onOpenDatabaseFor && onOpenDatabaseFor('teacher')}
+                    >
                       <Text style={S.accessIcon}>+◎</Text>
                       <Text style={S.accessLabel}>ADD TEACHER</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity activeOpacity={0.75} style={S.accessBtn}>
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      style={S.accessBtn}
+                      onPress={() => onOpenDatabaseFor && onOpenDatabaseFor('student')}
+                    >
                       <Text style={S.accessIcon}>+◎</Text>
                       <Text style={S.accessLabel}>ADD STUDENT</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity activeOpacity={0.75} style={[S.accessBtn, S.accessBtnRed]}>
-                      <Text style={[S.accessIcon, { color: T.danger }]}>✕</Text>
-                      <Text style={[S.accessLabel, { color: T.danger }]}>REVOKE{'\n'}ACCESS</Text>
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      style={S.accessBtn}
+                      onPress={() => onOpenDatabaseFor && onOpenDatabaseFor('parent')}
+                    >
+                      <Text style={S.accessIcon}>+◎</Text>
+                      <Text style={S.accessLabel}>ADD PARENT</Text>
                     </TouchableOpacity>
+                   
                   </View>
                 </View>
 
@@ -701,4 +778,95 @@ const S = StyleSheet.create({
     flexWrap: 'wrap', gap: 6, justifyContent: 'space-between',
   },
   footerTxt: { fontSize: 11, color: T.textHint },
+
+  // Notifications Page
+  notificationsPage: {
+    flex: 1,
+    backgroundColor: T.bg,
+  },
+  notificationsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: T.white,
+    paddingHorizontal: T.lg,
+    paddingVertical: T.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: T.borderMid,
+  },
+  notificationsTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: T.text,
+  },
+  notificationsSub: {
+    fontSize: 12,
+    color: T.textSub,
+    marginTop: 2,
+  },
+  closeNotificationsBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: T.rMd,
+    borderWidth: 1,
+    borderColor: T.borderMid,
+    backgroundColor: T.white,
+  },
+  closeNotificationsTxt: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: T.text,
+  },
+  notificationsScroll: {
+    flex: 1,
+  },
+  notificationsScrollContent: {
+    padding: T.lg,
+    gap: T.md,
+    paddingBottom: 36,
+  },
+  notificationCard: {
+    backgroundColor: T.white,
+    borderRadius: T.rLg,
+    padding: T.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: T.border,
+    gap: T.sm,
+  },
+  notificationTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: T.sm,
+  },
+  notificationDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: T.accent,
+  },
+  notificationDotHigh: {
+    backgroundColor: T.danger,
+  },
+  notificationCardTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: T.text,
+  },
+  notificationTime: {
+    fontSize: 11,
+    color: T.textHint,
+    fontWeight: '600',
+  },
+  notificationDetail: {
+    fontSize: 12,
+    color: T.textMid,
+    lineHeight: 18,
+  },
+  notificationId: {
+    fontSize: 10,
+    color: T.textHint,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+  },
 });

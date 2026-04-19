@@ -568,11 +568,25 @@ const TeacherBottomSheet = ({ visible, onClose }) => {
 };
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
-export default function ScholarEthosHub() {
+export default function ScholarEthosHub({ initialPortal }) {
   const headerFade = useRef(new Animated.Value(0)).current;
   const [showStudentSheet, setShowStudentSheet] = useState(false);
   const [showParentSheet, setShowParentSheet] = useState(false);
   const [showTeacherSheet, setShowTeacherSheet] = useState(false);
+
+  const openPortalSheet = (portalType) => {
+    setShowStudentSheet(false);
+    setShowParentSheet(false);
+    setShowTeacherSheet(false);
+
+    if (portalType === 'student') {
+      setShowStudentSheet(true);
+    } else if (portalType === 'parent') {
+      setShowParentSheet(true);
+    } else if (portalType === 'teacher') {
+      setShowTeacherSheet(true);
+    }
+  };
 
   useEffect(() => {
     Animated.timing(headerFade, {
@@ -582,13 +596,19 @@ export default function ScholarEthosHub() {
     }).start();
   }, []);
 
+  useEffect(() => {
+    if (initialPortal) {
+      openPortalSheet(initialPortal);
+    }
+  }, [initialPortal]);
+
   const handlePortalPress = (portal) => {
     if (portal === 'Students') {
-      setShowStudentSheet(true);
+      openPortalSheet('student');
     } else if (portal === 'Parents') {
-      setShowParentSheet(true);
+      openPortalSheet('parent');
     } else if (portal === 'Faculty & Academic Records') {
-      setShowTeacherSheet(true);
+      openPortalSheet('teacher');
     } else {
       // Navigation logic for other portals
       console.log(`Navigate to: ${portal}`);

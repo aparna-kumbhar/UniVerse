@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -151,8 +151,7 @@ const WeeklyTip = () => (
 );
 
 // ─── Main Dashboard ───────────────────────────────────────────────
-export default function Dashboardpage() {
-  const [activeTab, setActiveTab] = useState('home');
+export default function Dashboardpage({ onOpenFullCalendar }) {
 
   const renderContent = () => {
     if (isLaptop) {
@@ -169,7 +168,10 @@ export default function Dashboardpage() {
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Today's Lectures</Text>
-                <TouchableOpacity activeOpacity={0.7}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={onOpenFullCalendar}
+                >
                   <Text style={styles.sectionLink}>Full Calendar →</Text>
                 </TouchableOpacity>
               </View>
@@ -228,7 +230,10 @@ export default function Dashboardpage() {
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today's Lectures</Text>
-            <TouchableOpacity activeOpacity={0.7}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={onOpenFullCalendar}
+            >
               <Text style={styles.sectionLink}>Full Calendar →</Text>
             </TouchableOpacity>
           </View>
