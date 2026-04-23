@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const instituteRoutes = require("./Routes/instituteRoutes");
+const notesRoutes = require("./Routes/notesRoutes");
 const Batch = require("./Models/Batch");
 const Institute = require("./Models/Institute");
 const Student = require("./Models/Student");
@@ -34,6 +35,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use("/api/institutes", instituteRoutes);
+app.use("/api/notes", notesRoutes);
 
 const findInstitute = async (instituteId) => {
 	return Institute.findOne({ instituteId }, { _id: 0, instituteId: 1, name: 1 }).lean();
@@ -42,6 +44,8 @@ const findInstitute = async (instituteId) => {
 app.get("/api/students", async (req, res) => {
 	try {
 		const instituteId = (req.query.instituteId || "").trim();
+		const createdByEmail = (req.query.createdByEmail || "").trim().toLowerCase();
+		const createdByAdminName = (req.query.createdByAdminName || "").trim();
 		if (!instituteId) {
 			return res.status(400).json({ message: "instituteId is required" });
 		}
@@ -51,7 +55,14 @@ app.get("/api/students", async (req, res) => {
 			return res.status(404).json({ message: "Institute not found" });
 		}
 
-		const students = await Student.find({ instituteId }).sort({ createdAt: -1 });
+		const filter = { instituteId };
+		if (createdByEmail) {
+			filter["createdBy.email"] = createdByEmail;
+		} else if (createdByAdminName) {
+			filter["createdBy.adminName"] = createdByAdminName;
+		}
+
+		const students = await Student.find(filter).sort({ createdAt: -1 });
 		return res.status(200).json(students);
 	} catch (error) {
 		return res.status(500).json({ message: "Failed to fetch students", error: error.message });
@@ -183,20 +194,28 @@ app.get("/api/teachers/:id", async (req, res) => {
 
 app.post("/api/teachers", async (req, res) => {
 	try {
+		const adminId = (req.body.adminId || "").trim();
+		const instituteId = (req.body.instituteId || "").trim();
+		const ownerInstituteId = adminId || instituteId;
+
+		if (adminId && instituteId && adminId !== instituteId) {
+			return res.status(400).json({ message: "adminId and instituteId must match" });
+		}
+
 		const payload = {
-			instituteId: (req.body.instituteId || "").trim(),
+			instituteId: ownerInstituteId,
 			instituteName: "",
 			fullName: (req.body.fullName || "").trim(),
 			experience: (req.body.experience || "").trim(),
 			qualification: (req.body.qualification || "").trim(),
-			teacherId: (req.body.teacherId || req.body.fullName || "").trim(),
-			teacherPassword: (req.body.teacherPassword || "password").trim() || "password",
+			teacherId: ((req.body.teacherId || req.body.fullName) || "").trim(),
+			teacherPassword: (req.body.teacherPassword || "").trim(),
 			departmentName: (req.body.departmentName || "").trim(),
 			createdBy: req.body.createdBy || {},
 		};
 
-		if (!payload.instituteId || !payload.fullName) {
-			return res.status(400).json({ message: "instituteId and fullName are required" });
+		if (!payload.instituteId || !payload.fullName || !payload.teacherPassword) {
+			return res.status(400).json({ message: "adminId/instituteId, fullName and teacherPassword are required" });
 		}
 
 		const institute = await findInstitute(payload.instituteId);
@@ -209,6 +228,29 @@ app.post("/api/teachers", async (req, res) => {
 		return res.status(201).json(teacher);
 	} catch (error) {
 		return res.status(500).json({ message: "Failed to create teacher", error: error.message });
+	}
+});
+
+app.post("/api/teachers/login", async (req, res) => {
+	try {
+		const teacherId = (req.body.teacherId || "").trim();
+		const teacherPassword = (req.body.teacherPassword || "").trim();
+
+		if (!teacherId || !teacherPassword) {
+			return res.status(400).json({ message: "teacherId and teacherPassword are required" });
+		}
+
+		const teacher = await Teacher.findOne({ teacherId, teacherPassword }).sort({ createdAt: -1 });
+		if (!teacher) {
+			return res.status(401).json({ message: "Invalid teacher ID or password" });
+		}
+
+		return res.status(200).json({
+			message: "Teacher login successful",
+			teacher,
+		});
+	} catch (error) {
+		return res.status(500).json({ message: "Failed to login teacher", error: error.message });
 	}
 });
 

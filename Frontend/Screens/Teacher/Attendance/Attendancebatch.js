@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Image,
   StyleSheet,
   Dimensions,
   Platform,
   StatusBar,
+  ActivityIndicator,
+  NativeModules,
 } from 'react-native';
+import Constants from 'expo-constants';
+import { fetchWithBaseUrlFallback } from '../../../Src/axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import Attendancemark from './Attendancemark';
@@ -21,6 +23,7 @@ import Attendancemark from './Attendancemark';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_LAPTOP = SCREEN_WIDTH >= 1024;
 const IS_TABLET = SCREEN_WIDTH >= 768;
+
 
 // ─── Color Tokens ───────────────────────────────────────────────────────────
 const C = {
@@ -59,54 +62,46 @@ const NAV_ITEMS = [
   { id: 'resources', label: 'Resources', icon: '📄' },
 ];
 
-const BATCHES = [
-  {
-    id: 1,
-    tag: 'ENGINEERING',
-    tagColor: C.tagEngineering,
-    name: 'Delta-4',
-    students: 42,
-    desc: 'Advanced Structural Mechanics and computational fluid dynamics for...',
-    avatars: ['👩', '👨'],
-    extra: '+40',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80',
-  },
-  {
-    id: 2,
-    tag: 'MEDICAL',
-    tagColor: C.tagMedical,
-    name: 'Alpha-1',
-    students: 35,
-    desc: 'Foundation in Anatomy and Molecular Biology. Resident...',
-    avatars: ['👩', '👨'],
-    extra: '+34',
-    image: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&q=80',
-  },
-  {
-    id: 3,
-    tag: 'MATHEMATICS',
-    tagColor: C.tagMath,
-    name: 'Gamma',
-    students: 28,
-    desc: 'Abstract Algebra and Topology. Advanced theoretical group sessio...',
-    avatars: ['👩', '👨'],
-    extra: '+26',
-    image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80',
-  },
-  {
-    id: 4,
-    tag: 'PHYSICS',
-    tagColor: C.tagPhysics,
-    name: 'Rho-Sigma',
-    students: 50,
-    desc: 'Quantum Field Theory and Particle Physics modules. Comprehensive...',
-    avatars: ['👨'],
-    extra: '50+',
-    image: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400&q=80',
-  },
+const DEFAULT_BATCH_IMAGES = [
+  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80',
+  'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&q=80',
+  'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80',
+  'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=400&q=80',
 ];
 
-const FILTERS = ['All', 'Engineering', 'Medical', 'Mathematics', 'Physics'];
+const getTagColor = (type = '') => {
+  const normalizedType = type.toLowerCase();
+  if (normalizedType.includes('medical')) return C.tagMedical;
+  if (normalizedType.includes('math')) return C.tagMath;
+  if (normalizedType.includes('physics')) return C.tagPhysics;
+  return C.tagEngineering;
+};
+
+const toInitial = (value = '') => {
+  const safe = String(value || '').trim();
+  return safe ? safe[0].toUpperCase() : 'S';
+};
+
+const mapBatchToCard = (batch, index) => {
+  const students = Array.isArray(batch?.students) ? batch.students : [];
+  const avatars = students.slice(0, 2).map((student) => toInitial(student?.name || student?.id));
+  const extraStudents = students.length - avatars.length;
+  const batchType = (batch?.type || 'Regular').trim() || 'Regular';
+  const description = (batch?.description || '').trim();
+
+  return {
+    id: String(batch?._id || batch?.id || `batch-${index}`),
+    tag: batchType.toUpperCase(),
+    tagColor: getTagColor(batchType),
+    name: (batch?.name || 'Untitled batch').trim(),
+    students: students.length,
+    desc: description || 'No description provided for this batch.',
+    avatars: avatars.length ? avatars : ['S'],
+    extra: extraStudents > 0 ? `+${extraStudents}` : '',
+    image: DEFAULT_BATCH_IMAGES[index % DEFAULT_BATCH_IMAGES.length],
+    rawBatch: batch,
+  };
+};
 
 // ─── SidebarItem ─────────────────────────────────────────────────────────────
 function SidebarItem({ item, activeNav, onPress }) {
@@ -231,26 +226,113 @@ function RegisterCard() {
     ? (SCREEN_WIDTH - 48) / 2
     : SCREEN_WIDTH - 32;
 
- 
+  return (
+    <View style={[styles.registerCard, { width: cardWidth }]}> 
+      <View style={styles.plusCircle}>
+        <Text style={styles.plusText}>+</Text>
+      </View>
+      <Text style={styles.registerTitle}>No more batches in this view</Text>
+      <Text style={styles.registerSub}>Use filters or create a new batch from admin.</Text>
+    </View>
+  );
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-function AttendancebatchScreen({ navigation }) {
+function AttendancebatchScreen({ navigation, route }) {
 
+  const instituteId = (route?.params?.instituteId || '').trim();
   const [activeNav, setActiveNav] = useState('batches');
-  const [searchText, setSearchText] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [allBatches, setAllBatches] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBatches = async () => {
+      if (!instituteId) {
+        if (isMounted) {
+          setAllBatches([]);
+          setErrorMessage('Institute ID is missing for this teacher session.');
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage('');
+
+      try {
+        const query = `/api/batches?instituteId=${encodeURIComponent(instituteId)}`;
+        const { response } = await fetchWithBaseUrlFallback(query, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload?.message || 'Failed to fetch batches');
+        }
+
+        if (isMounted) {
+          const mapped = Array.isArray(payload)
+            ? payload.map((batch, index) => mapBatchToCard(batch, index))
+            : [];
+          setAllBatches(mapped);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setAllBatches([]);
+          setErrorMessage(error?.message || 'Could not load batches');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadBatches();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [instituteId]);
+
+  const filterOptions = useMemo(() => {
+    const dynamicFilters = Array.from(
+      new Set(allBatches.map((batch) => batch.tag).filter(Boolean))
+    );
+    return ['All', ...dynamicFilters];
+  }, [allBatches]);
 
   const filteredBatches =
     activeFilter === 'All'
-      ? BATCHES
-      : BATCHES.filter(
+      ? allBatches
+      : allBatches.filter(
           (b) => b.tag.toLowerCase() === activeFilter.toLowerCase()
         );
 
   const handleSelect = (batch) => {
-    navigation.navigate('Attendancemark', { batch });
+    const subjectOptions = Array.from(
+      new Set(
+        [
+          ...(Array.isArray(batch?.rawBatch?.subjects) ? batch.rawBatch.subjects : []),
+          batch?.rawBatch?.faculty?.subject,
+        ]
+          .map((subject) => String(subject || '').trim())
+          .filter(Boolean)
+      )
+    );
+
+    navigation.navigate('Attendancemark', {
+      batchId: String(batch?.rawBatch?._id || batch?.id || ''),
+      batchName: batch?.name || 'Batch Attendance',
+      instituteId,
+      batchStudents: Array.isArray(batch?.rawBatch?.students) ? batch.rawBatch.students : [],
+      subjectOptions,
+      selectedSubject: subjectOptions[0] || '',
+    });
   };
 
   // ── Main content ─────────────────────────────────────────────────────────
@@ -273,6 +355,8 @@ function AttendancebatchScreen({ navigation }) {
           <View>
            
             <Text style={styles.pageTitle}>Registry Overview</Text>
+            {!instituteId ? <Text style={styles.pageSubtitle}>Missing instituteId in navigation params.</Text> : null}
+            {!!errorMessage ? <Text style={styles.errorTextSmall}>{errorMessage}</Text> : null}
            
           </View>
          
@@ -286,7 +370,7 @@ function AttendancebatchScreen({ navigation }) {
           style={styles.filterChipsScroll}
           bounces={false}
         >
-          {FILTERS.map((f) => (
+          {filterOptions.map((f) => (
             <TouchableOpacity
               key={f}
               activeOpacity={0.75}
@@ -309,6 +393,26 @@ function AttendancebatchScreen({ navigation }) {
         </ScrollView>
 
         {/* Card grid */}
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color={C.accent} />
+            <Text style={styles.loadingText}>Loading batches...</Text>
+          </View>
+        ) : null}
+
+        {!isLoading && filteredBatches.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>No batches found</Text>
+            <Text style={styles.emptyStateSub}>
+              {activeFilter === 'All'
+                ? 'No batch records are available for this institute yet.'
+                : `No ${activeFilter.toLowerCase()} batches are available.`}
+            </Text>
+          </View>
+        ) : null}
+
+        {!isLoading && filteredBatches.length > 0 ? (
+          <>
         {IS_LAPTOP || IS_TABLET ? (
           <View style={styles.cardGrid}>
             {filteredBatches.map((batch) => (
@@ -341,6 +445,8 @@ function AttendancebatchScreen({ navigation }) {
             </View>
           </>
         )}
+          </>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -838,11 +944,50 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
+  loadingWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: C.textSecondary,
+    fontWeight: '500',
+  },
+  errorTextSmall: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#B91C1C',
+    fontWeight: '600',
+  },
+  emptyState: {
+    backgroundColor: C.cardBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 20,
+    marginTop: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: C.textPrimary,
+  },
+  emptyStateSub: {
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 19,
+    color: C.textSecondary,
+    textAlign: 'center',
+  },
 });
 
 const Stack = createStackNavigator();
 
-export default function Attendancebatch({ initialRouteName = 'Attendancebatch' }) {
+export default function Attendancebatch({ initialRouteName = 'Attendancebatch', instituteId = '' }) {
   return (
     <Stack.Navigator
       initialRouteName={initialRouteName}
@@ -851,6 +996,7 @@ export default function Attendancebatch({ initialRouteName = 'Attendancebatch' }
       <Stack.Screen
         name="Attendancebatch"
         component={AttendancebatchScreen}
+        initialParams={{ instituteId }}
       />
       <Stack.Screen
         name="Attendancemark"

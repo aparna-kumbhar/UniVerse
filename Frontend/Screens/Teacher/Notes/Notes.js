@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import Constants from 'expo-constants';
+import { fetchWithBaseUrlFallback } from '../../../Src/axios';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +13,7 @@ import {
   StatusBar,
   SafeAreaView,
   Alert,
+  NativeModules,
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -42,64 +45,75 @@ const C = {
 const IS_WEB = Platform.OS === 'web';
 
 // ── Data ───────────────────────────────────────────────────────
-const BATCH_LIST = [
-  'Batch 2024-A',
-  'Batch 2024-B',
-  'Batch 2024-C',
-  'Batch 2023-A',
-  'Batch 2023-B',
-];
-
-const SUBJECT_LIST = [
-  'Mathematics II',
-  'Physics',
-  'Chemistry',
-  'Computer Science',
-  'Economics',
-];
-
-const RECENT_UPLOADS = [
-  {
-    id: 1,
-    name: 'Thermodynamics_Lecture_08.pdf',
-    icon: '📊',
-    iconBg: '#E8F5F1',
-    tags: ['PHYSICS-A', 'BATCH 2024-C'],
-    time: '2h ago',
-    tagColors: [C.tagBg, C.tagGreen],
-    tagTextColors: [C.tagText, C.tagGreenText],
-  },
-  {
-    id: 2,
-    name: 'Calculus_Formula_Sheet.docx',
-    icon: '📄',
-    iconBg: '#EEF2FF',
-    tags: ['MATH-II', 'BATCH 2024-A'],
-    time: 'Yesterday',
-    tagColors: [C.tagBg, C.tagBg],
-    tagTextColors: [C.tagText, C.tagText],
-  },
-  {
-    id: 3,
-    name: 'Microeconomics_Slides_V2.pptx',
-    icon: '▶️',
-    iconBg: '#FFF3E8',
-    tags: ['ECON-101', 'OPEN ACCESS'],
-    time: '3 days ago',
-    tagColors: [C.tagBg, '#FFF3E8'],
-    tagTextColors: [C.tagText, '#C26B1A'],
-  },
-];
 
 // ══════════════════════════════════════════════════════════════
-export default function Notes() {
+export default function Notes({ instituteId = '', teacherId = '', teacherName = '' }) {
+  const resolvedInstituteId = String(instituteId || '').trim();
+  const resolvedTeacherId = String(teacherId || '').trim();
+  const resolvedTeacherName = String(teacherName || '').trim();
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [selectedBatch, setSelectedBatch] = useState(null);
-  const [subject, setSubject] = useState('Mathematics II');
+  const [subject, setSubject] = useState('');
   const [resourceTitle, setResourceTitle] = useState('');
   const [showBatchDropdown, setShowBatchDropdown] = useState(false);
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [batchOptions, setBatchOptions] = useState([]);
+  const [subjectOptions, setSubjectOptions] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchContextData = async () => {
+      if (!resolvedInstituteId) {
+        return;
+      }
+
+      try {
+        const { response } = await fetchWithBaseUrlFallback(
+          `/api/batches?instituteId=${encodeURIComponent(resolvedInstituteId)}`,
+          { method: 'GET', headers: { Accept: 'application/json' } }
+        );
+
+        const payload = await response.json();
+        if (!response.ok || !Array.isArray(payload)) {
+          return;
+        }
+
+        const dbBatchNames = payload
+          .map((batch) => String(batch?.name || '').trim())
+          .filter(Boolean);
+
+        const dbSubjects = payload
+          .map((batch) => String(batch?.faculty?.subject || '').trim())
+          .filter(Boolean);
+
+        const nextBatchOptions = Array.from(new Set(dbBatchNames));
+        const nextSubjectOptions = Array.from(new Set(dbSubjects));
+
+        if (isMounted) {
+          setBatchOptions(nextBatchOptions);
+          setSubjectOptions(nextSubjectOptions);
+
+          if (!subject || !nextSubjectOptions.includes(subject)) {
+            setSubject(nextSubjectOptions[0] || '');
+          }
+
+          if (selectedBatch && !nextBatchOptions.includes(selectedBatch)) {
+            setSelectedBatch(null);
+          }
+        }
+      } catch (error) {
+        // Keep default context options on network failure.
+      }
+    };
+
+    fetchContextData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [resolvedInstituteId]);
 
   const sharedProps = {
     selectedBatch, setSelectedBatch,
@@ -109,6 +123,11 @@ export default function Notes() {
     showBatchDropdown, setShowBatchDropdown,
     showSubjectDropdown, setShowSubjectDropdown,
     uploadedFiles, setUploadedFiles,
+    batchOptions,
+    subjectOptions,
+    resolvedInstituteId,
+    resolvedTeacherId,
+    resolvedTeacherName,
   };
 
   return (
@@ -185,6 +204,11 @@ function MainContent({
   showBatchDropdown, setShowBatchDropdown,
   showSubjectDropdown, setShowSubjectDropdown,
   uploadedFiles, setUploadedFiles,
+  batchOptions,
+  subjectOptions,
+  resolvedInstituteId,
+  resolvedTeacherId,
+  resolvedTeacherName,
 }) {
   const wrap = isDesktop
     ? { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 20 }
@@ -225,8 +249,13 @@ function MainContent({
 
       if (result.canceled) return;
 
+      if (!subject) {
+        Alert.alert('Validation', 'Please select a subject before uploading.');
+        return;
+      }
+
       if (result.assets && result.assets.length > 0) {
-        result.assets.forEach(file => {
+        for (const file of result.assets) {
           const fileName = file.name;
           const fileType = fileName.split('.').pop().toUpperCase();
           
@@ -248,19 +277,48 @@ function MainContent({
             iconBg = '#E8F5F1';
           }
           
-          addFileToUploads(fileName, icon, iconBg, resourceTitle);
-        });
+          await addFileToUploads(file, fileName, fileType, icon, iconBg, resourceTitle);
+        }
       }
     } catch (err) {
       console.error('Error picking file:', err);
-      Alert.alert('Error', 'Failed to pick file. Please try again.');
+      Alert.alert('Upload failed', err?.message || 'Failed to pick file. Please try again.');
     }
   };
 
-  const addFileToUploads = (fileName, icon, iconBg, title = '') => {
-    const fileExtension = fileName.split('.').pop().toUpperCase();
+  const addFileToUploads = async (fileAsset, fileName, fileType, icon, iconBg, title = '') => {
+    if (!resolvedInstituteId || !resolvedTeacherId) {
+      Alert.alert('Missing session', 'Teacher session is missing institute or teacher ID. Please login again.');
+      return;
+    }
+
+    const filePayload = {
+      instituteId: resolvedInstituteId,
+      teacherId: resolvedTeacherId,
+      teacherName: resolvedTeacherName,
+      title: title || fileName,
+      subject,
+      batch: selectedBatch || 'OPEN ACCESS',
+      fileName,
+      fileType,
+      mimeType: String(fileAsset?.mimeType || '').trim(),
+      fileSize: Number(fileAsset?.size || 0),
+      fileUri: String(fileAsset?.uri || '').trim(),
+    };
+
+    const { response } = await fetchWithBaseUrlFallback('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filePayload),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload?.message || 'Failed to save note in database');
+    }
+
     const newFile = {
-      id: Date.now(),
+      id: payload?._id || Date.now(),
       name: fileName,
       title: title || fileName,
       icon: icon,
@@ -274,11 +332,11 @@ function MainContent({
       tagTextColors: [C.tagText, C.tagGreenText],
     };
 
-    setUploadedFiles([newFile, ...uploadedFiles]);
+    setUploadedFiles((prev) => [newFile, ...prev]);
   };
 
   const filterFilesBySubject = () => {
-    const allFiles = [...uploadedFiles, ...RECENT_UPLOADS];
+    const allFiles = [...uploadedFiles];
     
     if (activeFilter === 'ALL') {
       return allFiles;
@@ -348,7 +406,7 @@ function MainContent({
 
           {showBatchDropdown && (
             <DropdownList
-              items={BATCH_LIST}
+              items={batchOptions}
               selectedValue={selectedBatch}
               onSelect={handleBatchSelect}
             />
@@ -384,7 +442,7 @@ function MainContent({
               setShowBatchDropdown(false);
             }}
           >
-            <Text style={styles.selectText}>{subject}</Text>
+            <Text style={styles.selectText}>{subject || 'Select Subject'}</Text>
             <Text style={[styles.chevron, showSubjectDropdown && styles.chevronActive]}>
               {showSubjectDropdown ? '⌃' : '⌄'}
             </Text>
@@ -392,7 +450,7 @@ function MainContent({
 
           {showSubjectDropdown && (
             <DropdownList
-              items={SUBJECT_LIST}
+              items={subjectOptions}
               selectedValue={subject}
               onSelect={handleSubjectSelect}
             />

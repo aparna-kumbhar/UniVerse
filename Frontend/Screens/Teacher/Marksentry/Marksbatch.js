@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,19 @@ import {
   Platform,
   Dimensions,
   Alert,
+  ActivityIndicator,
+  NativeModules,
 } from 'react-native';
+import Constants from 'expo-constants';
+import { fetchWithBaseUrlFallback } from '../../../Src/axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Marksinput from './Marksinput';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 const Stack = createNativeStackNavigator();
+
 
 // ── COLOURS ─────────────────────────────────────────────────────────────────
 const C = {
@@ -42,60 +48,50 @@ const C = {
 };
 
 // ── DATA ────────────────────────────────────────────────────────────────────
-const BATCHES = [
-  {
-    id: '1',
-    icon: '🧪',
-    iconBg: '#d4ede4',
-    name: 'Grade 12 – Physics A',
-    tags: [
-      { label: 'High Performance', accent: true },
-      { label: 'Core Curriculum', accent: false },
-    ],
-    students: 32,
-    average: '88.4%',
-    status: 'ACTIVE',
-  },
-  {
-    id: '2',
-    icon: '∑',
-    iconBg: '#c8e8e0',
-    name: 'Grade 11 – Advanced Calculus',
-    tags: [
-      { label: 'Accelerated', accent: true },
-      { label: 'STEM Track', accent: false },
-    ],
-    students: 24,
-    average: '76.2%',
-    status: 'PENDING',
-  },
-  {
-    id: '3',
-    icon: '📜',
-    iconBg: '#e8eceb',
-    name: 'Grade 12 – Modern History',
-    tags: [
-      { label: 'Elective', accent: true },
-      { label: 'Humanities', accent: false },
-    ],
-    students: 18,
-    average: '91.0%',
-    status: 'ACTIVE',
-  },
-  {
-    id: '4',
-    icon: '🔬',
-    iconBg: '#d0ece3',
-    name: 'Grade 10 – Biology B',
-    tags: [
-      { label: 'Foundation', accent: true },
-      { label: 'Core Curriculum', accent: false },
-    ],
-    students: 45,
-    average: '64.8%',
-    status: 'ACTIVE',
-  },
-];
+const BATCH_ICONS = ['🧪', '∑', '📜', '🔬'];
+const BATCH_ICON_BACKGROUNDS = ['#d4ede4', '#c8e8e0', '#e8eceb', '#d0ece3'];
+
+const buildBatchTags = (batchType) => {
+  const normalizedType = String(batchType || 'Regular').trim() || 'Regular';
+  return [
+    { label: normalizedType, accent: true },
+    { label: 'Core Curriculum', accent: false },
+  ];
+};
+
+const buildStatus = (startDateValue) => {
+  if (!startDateValue) return 'ACTIVE';
+
+  const startDate = new Date(startDateValue);
+  if (Number.isNaN(startDate.getTime())) return 'ACTIVE';
+  return startDate.getTime() > Date.now() ? 'PENDING' : 'ACTIVE';
+};
+
+const mapBatchToCard = (batch, index) => {
+  const students = Array.isArray(batch?.students) ? batch.students : [];
+  const studentGrades = students
+    .map((student) => Number.parseFloat(student?.grade))
+    .filter((grade) => Number.isFinite(grade));
+  const average = studentGrades.length
+    ? `${(
+        studentGrades.reduce((sum, grade) => sum + grade, 0) / studentGrades.length
+      ).toFixed(1)}%`
+    : 'N/A';
+
+  return {
+    id: String(batch?._id || batch?.id || `batch-${index}`),
+    icon: BATCH_ICONS[index % BATCH_ICONS.length],
+    iconBg: BATCH_ICON_BACKGROUNDS[index % BATCH_ICON_BACKGROUNDS.length],
+    name: String(batch?.name || 'Untitled Batch').trim(),
+    tags: buildBatchTags(batch?.type),
+    students: students.length,
+    average,
+    status: buildStatus(batch?.startDate),
+    studentNames: students
+      .map((student) => String(student?.name || '').trim())
+      .filter(Boolean),
+  };
+};
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '⊞' },
@@ -147,7 +143,7 @@ const BatchCard = ({ batch, onEnterMarks }) => (
         <StatusBadge status={batch.status} />
       </View>
       <TouchableOpacity style={styles.enterBtn} activeOpacity={0.6} onPress={() => onEnterMarks(batch)}>
-        <Text style={styles.enterBtnText}>Enter Marks</Text>
+        <Text style={styles.enterBtnText}>Select</Text>
       </TouchableOpacity>
     </View>
   </TouchableOpacity>
@@ -196,9 +192,14 @@ function MarksinputScreen() {
   const { batch } = route.params || {};
   
   const [marks, setMarks] = useState({});
-  const [studentNames, setStudentNames] = useState(
-    Array(20).fill().map((_, i) => `Student ${i + 1}`)
-  );
+  const [studentNames, setStudentNames] = useState(() => {
+    const namesFromBatch = Array.isArray(batch?.studentNames) ? batch.studentNames : [];
+    if (namesFromBatch.length) return namesFromBatch;
+
+    const studentCount = Number.parseInt(batch?.students, 10);
+    const total = Number.isFinite(studentCount) && studentCount > 0 ? studentCount : 20;
+    return Array(total).fill(null).map((_, i) => `Student ${i + 1}`);
+  });
 
   const handleMarkChange = (index, value) => {
     // Allow only numbers
@@ -281,12 +282,71 @@ function MarksinputScreen() {
 
 // ── MAIN BATCH SCREEN ──────────────────────────────────────────────────────
 function MarksbatchScreen() {
+  const route = useRoute();
+  const instituteId = (route?.params?.instituteId || '').trim();
   const [activeNav, setActiveNav] = useState('batches');
   const [search, setSearch] = useState('');
-  const filtered = BATCHES.filter(b =>
-    b.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const [batches, setBatches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigation = useNavigation();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchBatches = async () => {
+      if (!instituteId) {
+        if (isMounted) {
+          setBatches([]);
+          setErrorMessage('Institute ID is missing for this teacher session.');
+        }
+        return;
+      }
+
+      setLoading(true);
+      setErrorMessage('');
+
+      try {
+        const query = `/api/batches?instituteId=${encodeURIComponent(instituteId)}`;
+        const { response } = await fetchWithBaseUrlFallback(query, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload?.message || 'Failed to fetch batches');
+        }
+
+        if (isMounted) {
+          const mapped = Array.isArray(payload)
+            ? payload.map((batch, index) => mapBatchToCard(batch, index))
+            : [];
+          setBatches(mapped);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setBatches([]);
+          setErrorMessage(error?.message || 'Could not fetch batches');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchBatches();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [instituteId]);
+
+  const filtered = useMemo(
+    () => batches.filter((b) => b.name.toLowerCase().includes(search.toLowerCase())),
+    [batches, search]
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -312,16 +372,31 @@ function MarksbatchScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text style={styles.pageTitle}>Select Batch</Text>
+
+          {!instituteId ? <Text style={styles.errorText}>Missing institute ID.</Text> : null}
+          {!!errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+          {loading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator size="large" color={C.primary} />
+              <Text style={styles.loadingText}>Loading batches from database...</Text>
+            </View>
+          ) : null}
         
-          {filtered.map(batch => (
+          {!loading && filtered.map(batch => (
             <BatchCard
               key={batch.id}
               batch={batch}
               onEnterMarks={(b) => navigation.navigate('Marksinput', { batch: b })}
             />
           ))}
+
+          {!loading && filtered.length === 0 ? (
+            <Text style={styles.pageFooter}>No batches found for this institute.</Text>
+          ) : null}
+
           <Text style={styles.pageFooter}>
-            Viewing {filtered.length} active scholarship batches. Page 1 of 1.
+            Viewing {filtered.length} active scholarship batches.
           </Text>
         </ScrollView>
       </View>
@@ -331,11 +406,15 @@ function MarksbatchScreen() {
 
 // ── ROOT NAVIGATOR ───────────────────────────────────────────────────────────
 // REMOVED the NavigationContainer wrapper - now just exports the Stack Navigator
-export default function Marksbatch() {
+export default function Marksbatch({ instituteId = '' }) {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="BatchList" component={MarksbatchScreen} />
-      <Stack.Screen name="Marksinput" component={MarksinputScreen} />
+      <Stack.Screen
+        name="BatchList"
+        component={MarksbatchScreen}
+        initialParams={{ instituteId }}
+      />
+      <Stack.Screen name="Marksinput" component={Marksinput} />
     </Stack.Navigator>
   );
 }
@@ -419,6 +498,23 @@ const styles = StyleSheet.create({
   enterBtn: { backgroundColor: C.primary, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 18, alignSelf: 'flex-start', marginTop: 8 },
   enterBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   pageFooter: { marginTop: 16, textAlign: 'center', fontSize: 13, color: C.textMuted },
+  loadingWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: C.textSecondary,
+    fontWeight: '500',
+  },
+  errorText: {
+    color: '#B91C1C',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
 
   // Marks input screen styles
   marksContainer: {

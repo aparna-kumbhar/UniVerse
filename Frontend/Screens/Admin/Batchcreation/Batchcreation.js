@@ -17,94 +17,12 @@ import {
   Alert,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { fetchWithBaseUrlFallback } from '../../../Src/axios';
+import Addstudent from './Addstudent';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
-const KNOWN_LAN_FALLBACKS = ['http://192.168.137.215:5000'];
-
-const resolveWebBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.location?.hostname) {
-    return `http://${window.location.hostname}:5000`;
-  }
-  return 'http://localhost:5000';
-};
-
-const resolveDevHost = () => {
-  const scriptURL = NativeModules?.SourceCode?.scriptURL || '';
-  if (!scriptURL) return '';
-
-  try {
-    return new URL(scriptURL).hostname || '';
-  } catch (error) {
-    const match = scriptURL.match(/https?:\/\/([^/:]+)/i);
-    return match?.[1] || '';
-  }
-};
-
-const resolveExpoHost = () => {
-  const hostUri =
-    Constants?.expoConfig?.hostUri ||
-    Constants?.manifest2?.extra?.expoClient?.hostUri ||
-    Constants?.manifest?.debuggerHost ||
-    '';
-
-  if (!hostUri) return '';
-  return String(hostUri).split(':')[0] || '';
-};
-
-const getApiBaseUrls = () => {
-  const urls = [];
-  const add = (url) => {
-    if (url && !urls.includes(url)) {
-      urls.push(url);
-    }
-  };
-
-  const expoHost = resolveExpoHost();
-  const devHost = resolveDevHost();
-
-  if (Platform.OS === 'web') {
-    add(resolveWebBaseUrl());
-    add('http://localhost:5000');
-    add('http://127.0.0.1:5000');
-    return urls;
-  }
-
-  if (expoHost && expoHost !== 'localhost' && expoHost !== '127.0.0.1') {
-    add(`http://${expoHost}:5000`);
-  }
-
-  if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
-    add(`http://${devHost}:5000`);
-  }
-
-  if (Platform.OS === 'android') {
-    add('http://10.0.2.2:5000');
-  }
-
-  KNOWN_LAN_FALLBACKS.forEach(add);
-  add('http://localhost:5000');
-  add('http://127.0.0.1:5000');
-  return urls;
-};
-
-const API_BASE_URLS = getApiBaseUrls();
-
-const fetchWithBaseUrlFallback = async (path, options = {}) => {
-  let lastError;
-
-  for (const baseUrl of API_BASE_URLS) {
-    try {
-      const response = await fetch(`${baseUrl}${path}`, options);
-      return { response, baseUrl };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw lastError || new Error('Could not reach backend server');
-};
 
 const formatBatchDate = (value) => {
   if (!value) return '';
@@ -208,37 +126,31 @@ const StudentModal = ({
   instituteId = '',
 }) => {
   const [selected, setSelected] = useState([]);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (visible) {
-      setSelected(initialSelectedIds);
-      setSearch('');
+      setSelected(initialSelectedIds.map((id) => String(id)));
     }
   }, [visible, initialSelectedIds]);
 
-  const filtered = studentOptions.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   const toggle = (id) => {
+    const normalizedId = String(id);
     setSelected(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      prev.includes(normalizedId) ? prev.filter(x => x !== normalizedId) : [...prev, normalizedId]
     );
   };
 
   const handleConfirm = () => {
-    const selectedStudents = studentOptions.filter(s => selected.includes(s.id));
+    const selectedStudents = studentOptions.filter(s => selected.includes(String(s.id)));
     onConfirm(selectedStudents);
     setSelected([]);
-    setSearch('');
     onClose();
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContainer, isTablet && styles.modalContainerTablet]}>
+    <Modal visible={visible} animationType="slide">
+      <SafeAreaView style={styles.studentPageRoot}>
+        <View style={[styles.studentPageContainer, isTablet && styles.studentPageContainerTablet]}>
           {/* Header */}
           <View style={styles.modalHeader}>
             <View>
@@ -252,58 +164,16 @@ const StudentModal = ({
             </TouchableOpacity>
           </View>
 
-          {/* Search */}
-          <View style={styles.searchBox}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search students..."
-              placeholderTextColor="#9CA3AF"
-              value={search}
-              onChangeText={setSearch}
+          {/* List */}
+          <View style={styles.listContainer}>
+            <Addstudent
+              studentOptions={studentOptions}
+              selectedIds={selected}
+              onToggle={toggle}
+              loading={loading}
+              emptyText="No students found in database"
             />
           </View>
-
-          {/* List */}
-          <FlatList
-            data={filtered}
-            keyExtractor={item => String(item.id)}
-            style={styles.listContainer}
-            numColumns={isTablet ? 2 : 1}
-            key={isTablet ? 'two-col' : 'one-col'}
-            ListEmptyComponent={
-              <View style={styles.emptyListState}>
-                <Text style={styles.emptyListText}>{loading ? 'Loading students from database...' : 'No students found in database'}</Text>
-              </View>
-            }
-            renderItem={({ item }) => {
-              const isSelected = selected.includes(item.id);
-              return (
-                <TouchableOpacity
-                  style={[
-                    styles.studentRow,
-                    isSelected && styles.studentRowSelected,
-                    isTablet && styles.studentRowTablet,
-                  ]}
-                  onPress={() => toggle(item.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.studentAvatarWrap}>
-                    <Text style={styles.avatarEmoji}>{item.avatar}</Text>
-                  </View>
-                  <View style={styles.studentInfo}>
-                    <Text style={[styles.studentName, isSelected && styles.studentNameSelected]}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.studentGrade}>{item.grade}</Text>
-                  </View>
-                  <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-          />
 
           {/* Footer */}
           <View style={styles.modalFooter}>
@@ -322,7 +192,7 @@ const StudentModal = ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
@@ -691,7 +561,7 @@ const BatchCard = ({ batch, onEdit, onDelete, onAddStudents }) => {
 };
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
-export default function Batchcreation({ navigation, instituteId, instituteName }) {
+export default function Batchcreation({ navigation, instituteId, instituteName, adminEmail = '', adminName = '' }) {
   const [batches, setBatches] = useState([]);
   const [students, setStudents] = useState([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
@@ -703,6 +573,8 @@ export default function Batchcreation({ navigation, instituteId, instituteName }
 
   const resolvedInstituteId = (instituteId || '').trim();
   const resolvedInstituteName = (instituteName || '').trim();
+  const resolvedAdminEmail = (adminEmail || '').trim().toLowerCase();
+  const resolvedAdminName = (adminName || '').trim();
 
   const fetchBatches = async () => {
     if (!resolvedInstituteId) {
@@ -744,10 +616,19 @@ export default function Batchcreation({ navigation, instituteId, instituteName }
     try {
       setStudents([]);
       setLoadingStudents(true);
+      const query = new URLSearchParams({
+        instituteId: instituteIdToUse,
+      });
+      if (resolvedAdminEmail) {
+        query.append('createdByEmail', resolvedAdminEmail);
+      } else if (resolvedAdminName) {
+        query.append('createdByAdminName', resolvedAdminName);
+      }
+
       const { response } = await fetchWithBaseUrlFallback(
-        `/api/students?instituteId=${encodeURIComponent(instituteIdToUse)}`
+        `/api/students?${query.toString()}`
       );
-      const payload = await response.json();
+      let payload = await response.json();
 
       if (!response.ok) {
         setStudents([]);
@@ -755,10 +636,22 @@ export default function Batchcreation({ navigation, instituteId, instituteName }
         return;
       }
 
+      // Fallback for legacy records that may not have createdBy metadata.
+      if (Array.isArray(payload) && payload.length === 0 && (resolvedAdminEmail || resolvedAdminName)) {
+        const { response: fallbackResponse } = await fetchWithBaseUrlFallback(
+          `/api/students?instituteId=${encodeURIComponent(instituteIdToUse)}`
+        );
+        const fallbackPayload = await fallbackResponse.json();
+        if (fallbackResponse.ok) {
+          payload = fallbackPayload;
+        }
+      }
+
       const mapped = Array.isArray(payload)
         ? payload.map((student, index) => ({
-            id: student?.studentId || student?._id || `s-${index}`,
-            name: student?.fullName || 'Student',
+            // Name comes from Student model field: fullName (via /api/students route)
+            id: student?._id || student?.studentId || `s-${index}`,
+            name: (student?.fullName || student?.name || '').trim() || 'Student',
             grade: student?.academicYear || '',
             avatar: '👤',
           }))
@@ -775,7 +668,7 @@ export default function Batchcreation({ navigation, instituteId, instituteName }
 
   useEffect(() => {
     fetchStudents();
-  }, [resolvedInstituteId]);
+  }, [resolvedInstituteId, resolvedAdminEmail, resolvedAdminName]);
 
   const handleCreateBatch = async (batchData) => {
     if (!resolvedInstituteId) {
@@ -862,6 +755,23 @@ export default function Batchcreation({ navigation, instituteId, instituteName }
     const instituteIdFromBatch = String(activeBatchForStudents?.instituteId || '').trim();
     fetchStudents(instituteIdFromBatch || resolvedInstituteId);
   }, [studentModalVisible, activeBatchForStudents?.id, activeBatchForStudents?.instituteId, resolvedInstituteId]);
+
+  const activeBatchId = String(activeBatchForStudents?.id || '');
+  const activeBatchStudentIds = new Set(
+    (activeBatchForStudents?.students || []).map((student) => String(student?.id || '')).filter(Boolean)
+  );
+  const enrolledInOtherBatchIds = new Set(
+    batches
+      .filter((batch) => String(batch?.id || '') !== activeBatchId)
+      .flatMap((batch) => (batch?.students || []).map((student) => String(student?.id || '')))
+      .filter(Boolean)
+  );
+  const availableStudentsForModal = students.filter((student) => {
+    const id = String(student?.id || '').trim();
+    if (!id) return false;
+    if (activeBatchStudentIds.has(id)) return true;
+    return !enrolledInOtherBatchIds.has(id);
+  });
 
   const handleAddStudentsToBatch = async (selectedStudents) => {
     if (!activeBatchForStudents || !resolvedInstituteId) return;
@@ -979,7 +889,7 @@ export default function Batchcreation({ navigation, instituteId, instituteName }
         }}
         instituteId={String(activeBatchForStudents?.instituteId || resolvedInstituteId || '').trim()}
         loading={loadingStudents}
-        studentOptions={students}
+        studentOptions={availableStudentsForModal}
         initialSelectedIds={activeBatchForStudents?.students?.map((student) => student.id) || []}
         onConfirm={handleAddStudentsToBatch}
       />
@@ -1357,6 +1267,36 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
+  studentModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  studentModalContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    maxHeight: '88%',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 12,
+  },
+  studentModalContainerTablet: {
+    maxWidth: 700,
+    alignSelf: 'center',
+    width: '90%',
+  },
+  studentPageRoot: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  studentPageContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  studentPageContainerTablet: {
+    maxWidth: 900,
+    width: '100%',
+    alignSelf: 'center',
+  },
   modalContainer: {
     backgroundColor: '#FFF',
     borderTopLeftRadius: 24,
@@ -1423,29 +1363,19 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
     padding: 12,
     margin: 4,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    gap: 10,
+    gap: 12,
   },
   studentRowSelected: { backgroundColor: '#EFF6FF', borderColor: '#3B82F6' },
   studentRowTablet: { flex: undefined, width: '47%' },
-  studentAvatarWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEmoji: { fontSize: 20 },
-  studentInfo: { flex: 1 },
-  studentName: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  studentName: { flex: 1, fontSize: 14, fontWeight: '600', color: '#111827' },
   studentNameSelected: { color: '#1D4ED8' },
-  studentGrade: { fontSize: 12, color: '#6B7280', marginTop: 2 },
   checkbox: {
     width: 22,
     height: 22,

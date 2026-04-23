@@ -46,7 +46,7 @@ const NAV_ITEMS = [
   {key: 'profile', label: 'Profile', icon: '👤' },
   { key: 'schedules', label: 'Schedule', icon: icons.schedules },
   { key: 'attendance', label: 'Attendance', icon: icons.attendance },
-  { key: 'marks', label: 'Marks Entry', icon: icons.marks },
+  { key: 'marks', label: 'Exams', icon: icons.marks },
    { key: 'notes', label: 'Notes', icon: icons.notes },
   { key: 'tests', label: 'Test', icon: icons.tests },
   { key: 'teacherAttendance', label: 'Teacher Attendance', icon: icons.teacherAttendance },
@@ -295,11 +295,19 @@ function MobileBottomBar({ activeKey, onNavPress, onMenuPress }) {
 }
 
 // ── Main Export ───────────────────────────────────────────────────────────────
-export default function sidebar({ onLogout, navigation }) {
+export default function sidebar({ onLogout, navigation, route }) {
   const [activeKey, setActiveKey] = useState('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [attendanceInitialRoute, setAttendanceInitialRoute] = useState('Attendancebatch');
+  const teacherInstituteId =
+    route?.params?.instituteId ||
+    route?.params?.teacher?.instituteId ||
+    '';
+  const loggedInTeacherName =
+    route?.params?.teacher?.fullName ||
+    route?.params?.teacher?.teacherId ||
+    'Professor';
 
   const handleNewSession = () => {
     console.log('New session triggered');
@@ -336,9 +344,19 @@ export default function sidebar({ onLogout, navigation }) {
   const renderActiveContent = () => {
     switch (activeKey) {
       case 'dashboard':
-        return <Dashboardpage onOpenFullCalendar={handleOpenScheduleFromDashboard} />;
+        return (
+          <Dashboardpage
+            onOpenFullCalendar={handleOpenScheduleFromDashboard}
+            teacherName={loggedInTeacherName}
+          />
+        );
       case 'profile':
-        return <Profile />;
+        return (
+          <Profile
+            teacher={route?.params?.teacher || null}
+            instituteId={teacherInstituteId}
+          />
+        );
       case 'schedules':
         return <Schedule onTakeAttendanceNavigate={handleTakeAttendanceFromSchedule} />;
       case 'attendance':
@@ -346,12 +364,19 @@ export default function sidebar({ onLogout, navigation }) {
           <Attendancebatch
             key={attendanceInitialRoute}
             initialRouteName={attendanceInitialRoute}
+            instituteId={teacherInstituteId}
           />
         );
       case 'marks':
-        return <Marksbatch />;
+        return <Marksbatch instituteId={teacherInstituteId} />;
       case 'notes':
-        return <Notes />;
+        return (
+          <Notes
+            instituteId={teacherInstituteId}
+            teacherId={route?.params?.teacher?.teacherId || ''}
+            teacherName={loggedInTeacherName}
+          />
+        );
       case 'tests':
         return <Test />;
       case 'teacherAttendance':
@@ -371,7 +396,7 @@ export default function sidebar({ onLogout, navigation }) {
           </View>
         );
       default:
-        return <Dashboardpage />;
+        return <Dashboardpage teacherName={loggedInTeacherName} />;
     }
   };
 

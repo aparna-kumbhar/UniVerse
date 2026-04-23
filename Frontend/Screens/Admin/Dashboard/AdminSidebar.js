@@ -267,6 +267,8 @@ export default function AdminSidebar({ route }) {
   const navigation = useNavigation();
   const instituteId = route?.params?.instituteId || '';
   const instituteName = route?.params?.instituteName || '';
+  const adminEmail = route?.params?.adminEmail || '';
+  const adminName = route?.params?.adminName || '';
   const [activeKey,   setActiveKey]   = useState('Dashboard');
   const [drawerOpen,  setDrawerOpen]  = useState(false);
   const [collapsed,   setCollapsed]   = useState(false);
@@ -314,13 +316,28 @@ export default function AdminSidebar({ route }) {
       case 'AccessManagement':
         return <AccessManagement instituteId={instituteId} instituteName={instituteName} />;
       case 'Batchcreation':
-        return <Batchcreation instituteId={instituteId} instituteName={instituteName} />;
+        return (
+          <Batchcreation
+            instituteId={instituteId}
+            instituteName={instituteName}
+            adminEmail={adminEmail}
+            adminName={adminName}
+          />
+        );
       case 'Batchselection':
         return <Batchselection instituteId={instituteId} instituteName={instituteName} />;
       case 'Feedback':
         return <Feedback />;
       case 'Database':
-        return <Database initialPortal={databaseInitialPortal} instituteId={instituteId} instituteName={instituteName} />;
+        return (
+          <Database
+            initialPortal={databaseInitialPortal}
+            instituteId={instituteId}
+            instituteName={instituteName}
+            adminEmail={adminEmail}
+            adminName={adminName}
+          />
+        );
       case 'FeeManagement':
         return <FeeManagement instituteId={instituteId} instituteName={instituteName} />;
       case 'Support':

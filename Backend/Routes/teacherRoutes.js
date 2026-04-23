@@ -58,14 +58,14 @@ router.post("/", async (req, res) => {
 			fullName: (req.body.fullName || "").trim(),
 			experience: (req.body.experience || "").trim(),
 			qualification: (req.body.qualification || "").trim(),
-			teacherId: (req.body.teacherId || req.body.fullName || "").trim(),
-			teacherPassword: (req.body.teacherPassword || "password").trim() || "password",
+			teacherId: (req.body.fullName || "").trim(),
+			teacherPassword: (req.body.teacherPassword || "").trim(),
 			departmentName: (req.body.departmentName || "").trim(),
 			createdBy: req.body.createdBy || {},
 		};
 
-		if (!payload.instituteId || !payload.fullName) {
-			return res.status(400).json({ message: "instituteId and fullName are required" });
+		if (!payload.instituteId || !payload.fullName || !payload.teacherPassword) {
+			return res.status(400).json({ message: "instituteId, fullName and teacherPassword are required" });
 		}
 
 		const institute = await findInstitute(payload.instituteId);
@@ -79,6 +79,29 @@ router.post("/", async (req, res) => {
 		return res.status(201).json(teacher);
 	} catch (error) {
 		return res.status(500).json({ message: "Failed to create teacher", error: error.message });
+	}
+});
+
+router.post("/login", async (req, res) => {
+	try {
+		const teacherId = (req.body.teacherId || "").trim();
+		const teacherPassword = (req.body.teacherPassword || "").trim();
+
+		if (!teacherId || !teacherPassword) {
+			return res.status(400).json({ message: "teacherId and teacherPassword are required" });
+		}
+
+		const teacher = await Teacher.findOne({ teacherId, teacherPassword }).sort({ createdAt: -1 });
+		if (!teacher) {
+			return res.status(401).json({ message: "Invalid teacher ID or password" });
+		}
+
+		return res.status(200).json({
+			message: "Teacher login successful",
+			teacher,
+		});
+	} catch (error) {
+		return res.status(500).json({ message: "Failed to login teacher", error: error.message });
 	}
 });
 

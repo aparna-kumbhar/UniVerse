@@ -43,10 +43,10 @@ const C = {
 
 
 // ─── Welcome Banner ───────────────────────────────────────────────
-const WelcomeBanner = () => (
+const WelcomeBanner = ({ teacherName }) => (
   <View style={styles.welcomeCard}>
     <View style={styles.welcomeLeft}>
-      <Text style={styles.welcomeTitle}>Welcome, Professor Aris</Text>
+      <Text style={styles.welcomeTitle}>Welcome, {teacherName}</Text>
       <Text style={styles.welcomeSubtitle}>
         Curating excellence across 12 active modules today. Your students have
         shown a 15% increase in engagement this week.
@@ -151,14 +151,15 @@ const WeeklyTip = () => (
 );
 
 // ─── Main Dashboard ───────────────────────────────────────────────
-export default function Dashboardpage({ onOpenFullCalendar }) {
+export default function Dashboardpage({ onOpenFullCalendar, teacherName }) {
+  const safeTeacherName = String(teacherName || '').trim() || 'Professor';
 
   const renderContent = () => {
     if (isLaptop) {
       return (
         <View style={styles.twoCol}>
           <View style={styles.colLeft}>
-            <WelcomeBanner />
+            <WelcomeBanner teacherName={safeTeacherName} />
             <View style={styles.statsRow}>
               <StatCard icon="📚" label="ACTIVE BATCHES" value="12" accent={C.purple} />
               <StatCard icon="👥" label="TOTAL STUDENTS" value="482" accent={C.teal} />
@@ -219,7 +220,7 @@ export default function Dashboardpage({ onOpenFullCalendar }) {
 
     return (
       <View>
-        <WelcomeBanner />
+        <WelcomeBanner teacherName={safeTeacherName} />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll}>
           <StatCard icon="📚" label="ACTIVE BATCHES" value="12" accent={C.purple} />

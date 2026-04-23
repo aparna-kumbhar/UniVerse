@@ -18,94 +18,11 @@ import {
   NativeModules,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { fetchWithBaseUrlFallback } from '../../../Src/axios';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isTabletOrLaptop = SCREEN_WIDTH >= 768;
 
-const KNOWN_LAN_FALLBACKS = ['http://192.168.137.215:5000'];
-
-const resolveWebBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.location?.hostname) {
-    return `http://${window.location.hostname}:5000`;
-  }
-  return 'http://localhost:5000';
-};
-
-const resolveDevHost = () => {
-  const scriptURL = NativeModules?.SourceCode?.scriptURL || '';
-  if (!scriptURL) return '';
-
-  try {
-    return new URL(scriptURL).hostname || '';
-  } catch (error) {
-    const match = scriptURL.match(/https?:\/\/([^/:]+)/i);
-    return match?.[1] || '';
-  }
-};
-
-const resolveExpoHost = () => {
-  const hostUri =
-    Constants?.expoConfig?.hostUri ||
-    Constants?.manifest2?.extra?.expoClient?.hostUri ||
-    Constants?.manifest?.debuggerHost ||
-    '';
-
-  if (!hostUri) return '';
-  return String(hostUri).split(':')[0] || '';
-};
-
-const getApiBaseUrls = () => {
-  const urls = [];
-  const add = (url) => {
-    if (url && !urls.includes(url)) {
-      urls.push(url);
-    }
-  };
-
-  const expoHost = resolveExpoHost();
-  const devHost = resolveDevHost();
-
-  if (Platform.OS === 'web') {
-    add(resolveWebBaseUrl());
-    add('http://localhost:5000');
-    add('http://127.0.0.1:5000');
-    return urls;
-  }
-
-  if (expoHost && expoHost !== 'localhost' && expoHost !== '127.0.0.1') {
-    add(`http://${expoHost}:5000`);
-  }
-
-  if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
-    add(`http://${devHost}:5000`);
-  }
-
-  if (Platform.OS === 'android') {
-    add('http://10.0.2.2:5000');
-  }
-
-  KNOWN_LAN_FALLBACKS.forEach(add);
-  add('http://localhost:5000');
-  add('http://127.0.0.1:5000');
-  return urls;
-};
-
-const API_BASE_URLS = getApiBaseUrls();
-
-const fetchWithBaseUrlFallback = async (path, options = {}) => {
-  let lastError;
-
-  for (const baseUrl of API_BASE_URLS) {
-    try {
-      const response = await fetch(`${baseUrl}${path}`, options);
-      return { response, baseUrl };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw lastError || new Error('Could not reach backend server');
-};
 
 // ─── Colour tokens ───────────────────────────────────────────────────────────
 const COLORS = {
@@ -231,7 +148,7 @@ const NavItem = ({ icon, label, active, onPress }) => (
 );
 
 // ─── Student Bottom Sheet Component ────────────────────────────────────────────
-const StudentBottomSheet = ({ visible, onClose, instituteId }) => {
+const StudentBottomSheet = ({ visible, onClose, instituteId, adminEmail = '', adminName = '' }) => {
   const [fullName, setFullName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [studentPassword, setStudentPassword] = useState('');
@@ -307,6 +224,10 @@ const StudentBottomSheet = ({ visible, onClose, instituteId }) => {
           advancedFeePayment: lastYearMarks.trim(),
           dateOfBirth: dateOfBirth.trim(),
           academicYear: academicYear.trim(),
+          createdBy: {
+            email: (adminEmail || '').trim().toLowerCase(),
+            adminName: (adminName || '').trim(),
+          },
         }),
       });
 
@@ -493,7 +414,7 @@ const StudentBottomSheet = ({ visible, onClose, instituteId }) => {
 };
 
 // ─── Teacher Bottom Sheet Component ────────────────────────────────────────────
-const TeacherBottomSheet = ({ visible, onClose, instituteId }) => {
+const TeacherBottomSheet = ({ visible, onClose, instituteId, adminEmail = '', adminName = '' }) => {
   const [fullName, setFullName] = useState('');
   const [experience, setExperience] = useState('');
   const [qualification, setQualification] = useState('');
@@ -552,6 +473,7 @@ const TeacherBottomSheet = ({ visible, onClose, instituteId }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          adminId: instituteId.trim(),
           instituteId: instituteId.trim(),
           fullName: fullName.trim(),
           experience: experience.trim(),
@@ -559,6 +481,10 @@ const TeacherBottomSheet = ({ visible, onClose, instituteId }) => {
           teacherId: fullName.trim(),
           teacherPassword: teacherPassword.trim(),
           departmentName: departmentName.trim(),
+          createdBy: {
+            email: (adminEmail || '').trim().toLowerCase(),
+            adminName: (adminName || '').trim(),
+          },
         }),
       });
 
@@ -693,7 +619,7 @@ const TeacherBottomSheet = ({ visible, onClose, instituteId }) => {
 };
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
-export default function ScholarEthosHub({ initialPortal, instituteId }) {
+export default function ScholarEthosHub({ initialPortal, instituteId, adminEmail = '', adminName = '' }) {
   const headerFade = useRef(new Animated.Value(0)).current;
   const [showStudentSheet, setShowStudentSheet] = useState(false);
   const [showTeacherSheet, setShowTeacherSheet] = useState(false);
@@ -797,6 +723,8 @@ export default function ScholarEthosHub({ initialPortal, instituteId }) {
       <StudentBottomSheet
         visible={showStudentSheet}
         instituteId={instituteId}
+        adminEmail={adminEmail}
+        adminName={adminName}
         onClose={() => setShowStudentSheet(false)}
       />
 
@@ -804,6 +732,8 @@ export default function ScholarEthosHub({ initialPortal, instituteId }) {
       <TeacherBottomSheet
         visible={showTeacherSheet}
         instituteId={instituteId}
+        adminEmail={adminEmail}
+        adminName={adminName}
         onClose={() => setShowTeacherSheet(false)}
       />
 

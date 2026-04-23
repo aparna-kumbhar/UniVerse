@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Alert,
 	Dimensions,
+	Image,
 	Platform,
 	Modal,
 	ScrollView,
@@ -11,6 +12,8 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
+import { fetchWithBaseUrlFallback } from "../../../Src/axios";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IS_MOBILE = SCREEN_WIDTH < 768;
@@ -58,9 +61,33 @@ const ProfileInput = ({ value, onChangeText, editable, multiline = false, placeh
 	/>
 );
 
-export default function Profile() {
+const formatDateLabel = (value) => {
+	if (!value) return "";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
+	return date.toLocaleDateString("en-GB", {
+		day: "2-digit",
+		month: "short",
+		year: "numeric",
+	});
+};
+
+const getInitials = (name) => {
+	const parts = (name || "")
+		.split(" ")
+		.map((item) => item.trim())
+		.filter(Boolean);
+
+	if (!parts.length) return "TP";
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
+};
+
+export default function Profile({ teacher = null, instituteId = "" }) {
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState(null);
+	const [isFetching, setIsFetching] = useState(false);
+	const [fetchError, setFetchError] = useState("");
 
 	const [fullName, setFullName] = useState("Dr. Ayesha Rahman");
 	const [qualification, setQualification] = useState("M.Ed, PhD in Educational Psychology");
@@ -74,9 +101,88 @@ export default function Profile() {
 	const [joiningDate, setJoiningDate] = useState("12 Aug 2011");
 	const [classAssigned, setClassAssigned] = useState("Grade 10 A, Grade 11 B");
 	const [location, setLocation] = useState("Dhaka Campus");
+	const [photoUri, setPhotoUri] = useState("");
 	const [bio, setBio] = useState(
 		"Passionate mathematics educator focused on concept clarity, exam readiness, and student confidence through structured learning and mentorship."
 	);
+
+	const applyTeacherData = (teacherData = {}) => {
+		setFullName(teacherData.fullName || "");
+		setQualification(teacherData.qualification || "");
+		setExperience(teacherData.experience || "");
+		setEmployeeId(teacherData.teacherId || "");
+		setDepartment(teacherData.departmentName || "");
+		setLocation(teacherData.instituteName || "");
+		setJoiningDate(formatDateLabel(teacherData.createdAt));
+		setPhotoUri(teacherData.photoUrl || teacherData.profilePhoto || teacherData.avatar || "");
+	};
+
+	const handlePickPhoto = async () => {
+		try {
+			const result = await DocumentPicker.getDocumentAsync({
+				type: ["image/*"],
+				multiple: false,
+				copyToCacheDirectory: true,
+			});
+
+			if (result.canceled) {
+				return;
+			}
+
+			const selectedUri = result.assets?.[0]?.uri || "";
+			if (!selectedUri) {
+				return;
+			}
+
+			if (editing) {
+				setDraft((prev) => ({ ...(prev || {}), photoUri: selectedUri }));
+				return;
+			}
+
+			setPhotoUri(selectedUri);
+		} catch (error) {
+			Alert.alert("Photo upload failed", "Unable to select image. Please try again.");
+		}
+	};
+
+	useEffect(() => {
+		if (teacher) {
+			applyTeacherData(teacher);
+		}
+	}, [teacher]);
+
+	useEffect(() => {
+		const fetchTeacherDetails = async () => {
+			const teacherDocId = (teacher?._id || "").trim();
+			const resolvedInstituteId = (instituteId || teacher?.instituteId || "").trim();
+
+			if (!teacherDocId || !resolvedInstituteId) {
+				return;
+			}
+
+			setIsFetching(true);
+			setFetchError("");
+
+			try {
+				const path = `/api/teachers/${teacherDocId}?instituteId=${encodeURIComponent(resolvedInstituteId)}`;
+				const { response } = await fetchWithBaseUrlFallback(path);
+				const payload = await response.json();
+
+				if (!response.ok) {
+					setFetchError(payload?.message || "Unable to fetch teacher profile details.");
+					return;
+				}
+
+				applyTeacherData(payload || {});
+			} catch (error) {
+				setFetchError("Unable to fetch teacher profile details.");
+			} finally {
+				setIsFetching(false);
+			}
+		};
+
+		fetchTeacherDetails();
+	}, [teacher?._id, teacher?.instituteId, instituteId]);
 
 	const handleSave = () => {
 		if (draft) {
@@ -92,6 +198,7 @@ export default function Profile() {
 			setJoiningDate(draft.joiningDate);
 			setClassAssigned(draft.classAssigned);
 			setLocation(draft.location);
+			setPhotoUri(draft.photoUri || "");
 			setBio(draft.bio);
 		}
 		setEditing(false);
@@ -118,10 +225,14 @@ export default function Profile() {
 			joiningDate,
 			classAssigned,
 			location,
+			photoUri,
 			bio,
 		});
 		setEditing(true);
 	};
+
+	const displayedPhotoUri = (editing ? draft?.photoUri : photoUri) || photoUri;
+	const titleName = fullName || "Teacher Profile";
 
 	return (
 		<ScrollView style={styles.page} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false}>
@@ -130,17 +241,24 @@ export default function Profile() {
 
 			<View style={styles.headerCard}>
 				<View style={styles.headerRow}>
-					<View style={styles.avatarWrap}>
+					<TouchableOpacity style={styles.avatarWrap} onPress={handlePickPhoto} activeOpacity={0.85}>
 						<View style={styles.avatar}>
-							<Text style={styles.avatarText}>AR</Text>
+							{displayedPhotoUri ? (
+								<Image source={{ uri: displayedPhotoUri }} style={styles.avatarImage} />
+							) : (
+								<Text style={styles.avatarText}>{getInitials(fullName)}</Text>
+							)}
 						</View>
-					</View>
+						<Text style={styles.avatarUploadText}>Add Photo</Text>
+					</TouchableOpacity>
 
 					<View style={styles.headerTextBlock}>
-						<Text style={styles.pageTitle}>Teacher Profile</Text>
+						<Text style={styles.pageTitle}>{titleName}</Text>
 						<Text style={styles.pageSubtitle}>
 							Manage your teaching information, professional background, and class assignments in one clean dashboard.
 						</Text>
+						{isFetching ? <Text style={styles.fetchHint}>Loading latest profile details...</Text> : null}
+						{!isFetching && fetchError ? <Text style={styles.fetchError}>{fetchError}</Text> : null}
 
 						<View style={styles.badgeRow}>
 							<View style={styles.badge}>
@@ -296,6 +414,24 @@ export default function Profile() {
 
 							<View style={[styles.fieldGrid, IS_MOBILE && styles.fieldGridStack]}>
 								<View style={styles.fieldCol}>
+									<FieldLabel>Profile Photo URL</FieldLabel>
+									<ProfileInput
+										value={draft?.photoUri || ""}
+										onChangeText={(text) => setDraft((prev) => ({ ...prev, photoUri: text }))}
+										editable
+										placeholder="Paste image URL or use upload"
+									/>
+								</View>
+								<View style={styles.fieldCol}>
+									<FieldLabel>Photo Upload</FieldLabel>
+									<TouchableOpacity style={styles.secondaryButton} onPress={handlePickPhoto} activeOpacity={0.85}>
+										<Text style={styles.secondaryButtonText}>Upload Photo</Text>
+									</TouchableOpacity>
+								</View>
+							</View>
+
+							<View style={[styles.fieldGrid, IS_MOBILE && styles.fieldGridStack]}>
+								<View style={styles.fieldCol}>
 									<FieldLabel>Age</FieldLabel>
 									<ProfileInput value={draft?.age || ""} onChangeText={(text) => setDraft((prev) => ({ ...prev, age: text }))} editable placeholder="Enter age" />
 								</View>
@@ -437,12 +573,23 @@ const styles = StyleSheet.create({
 		backgroundColor: T.blue,
 		alignItems: "center",
 		justifyContent: "center",
+		overflow: "hidden",
+	},
+	avatarImage: {
+		width: "100%",
+		height: "100%",
 	},
 	avatarText: {
 		fontSize: 28,
 		fontWeight: "800",
 		color: T.white,
 		letterSpacing: 1,
+	},
+	avatarUploadText: {
+		marginTop: 8,
+		fontSize: 11,
+		fontWeight: "700",
+		color: T.blue,
 	},
 	headerTextBlock: {
 		flex: 1,
@@ -464,6 +611,18 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		lineHeight: 22,
 		maxWidth: 640,
+	},
+	fetchHint: {
+		marginTop: 8,
+		fontSize: 12,
+		fontWeight: "600",
+		color: T.blue,
+	},
+	fetchError: {
+		marginTop: 8,
+		fontSize: 12,
+		fontWeight: "600",
+		color: "#b91c1c",
 	},
 	badgeRow: {
 		flexDirection: "row",

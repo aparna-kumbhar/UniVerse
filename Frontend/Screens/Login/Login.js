@@ -4,6 +4,7 @@ import {
   ScrollView, KeyboardAvoidingView, Platform, StatusBar, Dimensions, Alert, NativeModules,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { API_BASE_URLS, fetchWithBaseUrlFallback } from '../../Src/axios';
 import { createStackNavigator } from '@react-navigation/stack';
 import StudentSidebar from '../student/Dashboard/sidebar';
 import Sidebar from '../Parent/Dashboard/sidebar';
@@ -15,92 +16,7 @@ const isWeb = Platform.OS === 'web';
 const STUDENT_CREDENTIALS = { email: '123', password: '123' };
 const PARENT_CREDENTIALS = { email: 'parent@123', password: 'parent123' };
 const Committee_CREDENTIALS = { email: '12345', password: '12345' };
-const TEACHER_CREDENTIALS = { email: 't', password: 't' };
 
-const KNOWN_LAN_FALLBACKS = ['http://192.168.137.215:5000'];
-
-const resolveWebBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.location?.hostname) {
-    return `http://${window.location.hostname}:5000`;
-  }
-  return 'http://localhost:5000';
-};
-
-const resolveDevHost = () => {
-  const scriptURL = NativeModules?.SourceCode?.scriptURL || '';
-  if (!scriptURL) return '';
-
-  try {
-    return new URL(scriptURL).hostname || '';
-  } catch (error) {
-    const match = scriptURL.match(/https?:\/\/([^/:]+)/i);
-    return match?.[1] || '';
-  }
-};
-
-const resolveExpoHost = () => {
-  const hostUri =
-    Constants?.expoConfig?.hostUri ||
-    Constants?.manifest2?.extra?.expoClient?.hostUri ||
-    Constants?.manifest?.debuggerHost ||
-    '';
-
-  if (!hostUri) return '';
-  return String(hostUri).split(':')[0] || '';
-};
-
-const getApiBaseUrls = () => {
-  const urls = [];
-  const add = (url) => {
-    if (url && !urls.includes(url)) {
-      urls.push(url);
-    }
-  };
-
-  const expoHost = resolveExpoHost();
-  const devHost = resolveDevHost();
-
-  if (Platform.OS === 'web') {
-    add(resolveWebBaseUrl());
-    add('http://localhost:5000');
-    add('http://127.0.0.1:5000');
-    return urls;
-  }
-
-  if (expoHost && expoHost !== 'localhost' && expoHost !== '127.0.0.1') {
-    add(`http://${expoHost}:5000`);
-  }
-
-  if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
-    add(`http://${devHost}:5000`);
-  }
-
-  if (Platform.OS === 'android') {
-    add('http://10.0.2.2:5000');
-  }
-
-  KNOWN_LAN_FALLBACKS.forEach(add);
-  add('http://localhost:5000');
-  add('http://127.0.0.1:5000');
-  return urls;
-};
-
-const API_BASE_URLS = getApiBaseUrls();
-
-const fetchWithBaseUrlFallback = async (path, options = {}) => {
-  let lastError;
-
-  for (const baseUrl of API_BASE_URLS) {
-    try {
-      const response = await fetch(`${baseUrl}${path}`, options);
-      return { response, baseUrl };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw lastError || new Error('Could not reach backend server');
-};
 
 const LoginStack = createStackNavigator();
 
@@ -119,10 +35,13 @@ function LoginScreen({ navigation }) {
       setError('Please enter both email and password');
       return;
     }
+
+    const loginId = email.trim();
+    const loginPassword = password;
+
     const isStudent = email === STUDENT_CREDENTIALS.email && password === STUDENT_CREDENTIALS.password;
     const isParent = email === PARENT_CREDENTIALS.email && password === PARENT_CREDENTIALS.password;
     const isCommittee = email === Committee_CREDENTIALS.email && password === Committee_CREDENTIALS.password;
-    const isTeacher = email === TEACHER_CREDENTIALS.email && password === TEACHER_CREDENTIALS.password;
 
     if (isStudent) {
       navigation.replace('StudentDashboard');
@@ -139,18 +58,37 @@ function LoginScreen({ navigation }) {
       return;
     }
 
-    if (isTeacher) {
-      navigation.replace('TeacherDashboard');
-      return;
-    }
-
     try {
+      const { response: teacherResponse, baseUrl: teacherBaseUrl } = await fetchWithBaseUrlFallback('/api/teachers/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teacherId: loginId,
+          teacherPassword: loginPassword,
+        }),
+      });
+
+      const teacherPayload = await teacherResponse.json();
+      if (teacherResponse.ok) {
+        console.log('Teacher login endpoint used:', `${teacherBaseUrl}/api/teachers/login`);
+        navigation.replace('TeacherDashboard', {
+          teacher: teacherPayload?.teacher || {},
+          instituteId: teacherPayload?.teacher?.instituteId || '',
+        });
+        return;
+      }
+
+      if (teacherResponse.status !== 401) {
+        setError(teacherPayload?.message || 'Unable to sign in right now');
+        return;
+      }
+
       const { response, baseUrl } = await fetchWithBaseUrlFallback('/api/institutes/admin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instituteId: email.trim(),
-          institutePassword: password,
+          adminId: loginId,
+          adminPassword: loginPassword,
         }),
       });
 
@@ -159,8 +97,10 @@ function LoginScreen({ navigation }) {
         const institute = payload?.institute || payload || {};
         console.log('Admin login endpoint used:', `${baseUrl}/api/institutes/admin-login`);
         navigation.replace('AdminDashboard', {
-          instituteId: institute?.instituteId || institute?.adminId || email.trim(),
+          instituteId: institute?.instituteId || institute?.adminId || loginId,
           instituteName: institute?.name || '',
+          adminEmail: institute?.email || '',
+          adminName: institute?.adminName || '',
         });
         return;
       }
@@ -172,7 +112,7 @@ function LoginScreen({ navigation }) {
     } catch (networkError) {
       Alert.alert(
         'Network error',
-        `Could not connect to server for admin login.\n\nTried URLs:\n${API_BASE_URLS.join('\n')}`
+        `Could not connect to server for teacher/admin login.\n\nTried URLs:\n${API_BASE_URLS.join('\n')}`
       );
       return;
     }

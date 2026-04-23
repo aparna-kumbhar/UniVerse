@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { fetchWithBaseUrlFallback } from '../../../Src/axios';
 
 export const isLaptop = Dimensions.get('window').width >= 768;
 const { width } = Dimensions.get('window');
@@ -20,18 +21,32 @@ const IS_WEB = Platform.OS === 'web';
 
 
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+const FALLBACK_COLORS = ['#3A3A3A', '#7B6EA6', '#4A4A4A', '#6B7280', '#8B5E3C', '#C2856B', '#2D6A4F', '#B5451B'];
 
-const INITIAL_STUDENTS = [
-  { id: '1', studentId: '2024-F-3902', name: 'Elias Vance',   role: 'Graduate Researcher', avatar: '#3A3A3A', status: 'present' },
-  { id: '2', studentId: '2024-F-4105', name: 'Selina Chen',   role: 'Honors Fellow',        avatar: '#7B6EA6', status: 'absent'  },
-  { id: '3', studentId: '2024-F-3811', name: 'Marcus Kael',   role: 'Teaching Assistant',   avatar: '#4A4A4A', status: 'late'    },
-  { id: '4', studentId: '2024-F-4022', name: 'Lyra Sterling', role: 'PhD Candidate',        avatar: '#6B7280', status: null      },
-  { id: '5', studentId: '2024-F-3756', name: 'Omar Hassan',   role: 'Graduate Researcher',  avatar: '#8B5E3C', status: null      },
-  { id: '6', studentId: '2024-F-4301', name: 'Priya Nair',    role: 'Honors Fellow',        avatar: '#C2856B', status: null      },
-  { id: '7', studentId: '2024-F-4412', name: 'Jonas Ritter',  role: 'PhD Candidate',        avatar: '#2D6A4F', status: null      },
-  { id: '8', studentId: '2024-F-4530', name: 'Amara Osei',    role: 'Graduate Researcher',  avatar: '#B5451B', status: null      },
-];
+const mapBatchStudentsToAttendance = (batchStudents = []) =>
+  (Array.isArray(batchStudents) ? batchStudents : []).map((student, index) => ({
+    id: String(student?.id || student?._id || `student-${index}`),
+    studentId: String(student?.id || student?._id || ''),
+    name: String(student?.name || 'Student'),
+    role: String(student?.grade || student?.academicYear || 'Student'),
+    avatar: FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+    status: null,
+  }));
+
+const buildSubjectOptions = (routeParams = {}) => {
+  const fromRouteList = Array.isArray(routeParams?.subjectOptions) ? routeParams.subjectOptions : [];
+  const fromRouteSingle = routeParams?.selectedSubject;
+
+  const normalized = Array.from(
+    new Set(
+      [...fromRouteList, fromRouteSingle]
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+    )
+  );
+
+  return normalized.length > 0 ? normalized : ['General'];
+};
 
 // ─── Avatar Component ─────────────────────────────────────────────────────────
 
@@ -132,11 +147,55 @@ const BottomTab = ({ icon, label, active, onPress }) => (
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-const Attendancemark = () => {
+const Attendancemark = ({ route }) => {
     const navigation = useNavigation();
-  const [students, setStudents]       = useState(INITIAL_STUDENTS);
+  const batchId = String(route?.params?.batchId || '').trim();
+  const instituteId = String(route?.params?.instituteId || '').trim();
+  const batchName = String(route?.params?.batchName || 'Batch Attendance');
+  const subjectOptions = buildSubjectOptions(route?.params || {});
+  const [students, setStudents]       = useState(mapBatchStudentsToAttendance(route?.params?.batchStudents || []));
   const [search, setSearch]           = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedSubject, setSelectedSubject] = useState(subjectOptions[0]);
+  const [isSubjectPickerOpen, setIsSubjectPickerOpen] = useState(false);
+
+  useEffect(() => {
+    const nextOptions = buildSubjectOptions(route?.params || {});
+    setSelectedSubject((prev) => (nextOptions.includes(prev) ? prev : nextOptions[0]));
+  }, [route?.params?.subjectOptions, route?.params?.selectedSubject]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBatchStudents = async () => {
+      if (!batchId || !instituteId) {
+        return;
+      }
+
+      try {
+        const query = `/api/batches/${encodeURIComponent(batchId)}?instituteId=${encodeURIComponent(instituteId)}`;
+        const { response } = await fetchWithBaseUrlFallback(query);
+        const payload = await response.json();
+
+        if (!response.ok) {
+          return;
+        }
+
+        const mappedStudents = mapBatchStudentsToAttendance(payload?.students || []);
+        if (isMounted) {
+          setStudents(mappedStudents);
+        }
+      } catch (error) {
+        // Keep the fallback students from route params if network fetch fails.
+      }
+    };
+
+    loadBatchStudents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [batchId, instituteId, route?.params?.batchStudents]);
 
   const handleBackPress = () => {
     if (navigation.canGoBack()) {
@@ -160,14 +219,14 @@ const Attendancemark = () => {
     if (unmarked > 0) {
       Alert.alert(
         'Incomplete Attendance',
-        `${unmarked} student(s) have not been marked. Do you want to submit anyway?`,
+        `${unmarked} student(s) have not been marked for ${selectedSubject}. Do you want to submit anyway?`,
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Submit', style: 'destructive', onPress: () => Alert.alert('Success', 'Attendance submitted successfully!') },
+          { text: 'Submit', style: 'destructive', onPress: () => Alert.alert('Success', `Attendance submitted successfully for ${selectedSubject}!`) },
         ]
       );
     } else {
-      Alert.alert('Success', 'Attendance submitted successfully!');
+      Alert.alert('Success', `Attendance submitted successfully for ${selectedSubject}!`);
     }
   };
 
@@ -179,7 +238,7 @@ const Attendancemark = () => {
   const pending       = enrolled - marked;
 
   const filtered = students.filter((s) => {
-    const matchesSearch  = s.name.toLowerCase().includes(search.toLowerCase()) || s.studentId.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch  = String(s.name || '').toLowerCase().includes(search.toLowerCase()) || String(s.studentId || '').toLowerCase().includes(search.toLowerCase());
     const matchesFilter  = filterStatus === 'all' ? true : s.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -230,7 +289,7 @@ const Attendancemark = () => {
               <View style={styles.sessionIdRow}>
                
               <Text style={styles.sessionTitle} numberOfLines={1} ellipsizeMode="tail">
-                Advanced Fluid Mechanics
+                {batchName}
               </Text>
               <View style={styles.dateRow}>
                 <Text style={styles.dateIcon}>🗓</Text>
@@ -240,6 +299,57 @@ const Attendancemark = () => {
                   <Text style={styles.liveText}>LIVE</Text>
                 </View>
               </View>
+            </View>
+
+            <View style={styles.subjectSection}>
+              <Text style={styles.subjectLabel}>Subject</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.subjectToggle}
+                onPress={() => setIsSubjectPickerOpen((prev) => !prev)}
+              >
+                <Text style={styles.subjectToggleText} numberOfLines={1}>
+                  {selectedSubject}
+                </Text>
+                <Text style={styles.subjectToggleIcon}>{isSubjectPickerOpen ? '▴' : '▾'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.dragHandleBtn}
+                onPress={() => setIsSubjectPickerOpen(true)}
+              >
+                <View style={styles.dragHandleBar} />
+              </TouchableOpacity>
+
+              {isSubjectPickerOpen ? (
+                <View style={styles.subjectDrawer}>
+                  <Text style={styles.subjectHint}>Drag left or right to view all subjects</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    nestedScrollEnabled={true}
+                    contentContainerStyle={styles.subjectScrollContent}
+                  >
+                    {subjectOptions.map((subject) => {
+                      const isActive = selectedSubject === subject;
+                      return (
+                        <TouchableOpacity
+                          key={subject}
+                          activeOpacity={0.75}
+                          onPress={() => {
+                            setSelectedSubject(subject);
+                            setIsSubjectPickerOpen(false);
+                          }}
+                          style={[styles.subjectChip, isActive && styles.subjectChipActive]}
+                        >
+                          <Text style={[styles.subjectChipText, isActive && styles.subjectChipTextActive]}>{subject}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              ) : null}
             </View>
 
             {/* ── Stat Cards ── */}
@@ -522,6 +632,97 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#EF4444',
     letterSpacing: 1,
+  },
+
+  // ── Subject Selector ──
+  subjectSection: {
+    marginBottom: 14,
+  },
+  subjectLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  subjectScrollContent: {
+    gap: 8,
+  },
+  subjectToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#FFF',
+  },
+  subjectToggleText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    marginRight: 10,
+  },
+  subjectToggleIcon: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '700',
+  },
+  subjectDrawer: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  dragHandleBtn: {
+    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    gap: 6,
+  },
+  dragHandleBar: {
+    width: 44,
+    height: 4,
+    borderRadius: 3,
+    backgroundColor: '#9CA3AF',
+  },
+  subjectHint: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  subjectChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+  },
+  subjectChipActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#2563EB',
+  },
+  subjectChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  subjectChipTextActive: {
+    color: '#1D4ED8',
   },
 
   // ── Stat Cards ──

@@ -11,6 +11,8 @@ const findInstitute = async (instituteId) => {
 router.get("/", async (req, res) => {
 	try {
 		const instituteId = (req.query.instituteId || "").trim();
+		const createdByEmail = (req.query.createdByEmail || "").trim().toLowerCase();
+		const createdByAdminName = (req.query.createdByAdminName || "").trim();
 		if (!instituteId) {
 			return res.status(400).json({ message: "instituteId is required" });
 		}
@@ -20,7 +22,14 @@ router.get("/", async (req, res) => {
 			return res.status(404).json({ message: "Institute not found" });
 		}
 
-		const students = await Student.find({ instituteId }).sort({ createdAt: -1 });
+		const filter = { instituteId };
+		if (createdByEmail) {
+			filter["createdBy.email"] = createdByEmail;
+		} else if (createdByAdminName) {
+			filter["createdBy.adminName"] = createdByAdminName;
+		}
+
+		const students = await Student.find(filter).sort({ createdAt: -1 });
 		return res.status(200).json(students);
 	} catch (error) {
 		return res.status(500).json({ message: "Failed to fetch students", error: error.message });
