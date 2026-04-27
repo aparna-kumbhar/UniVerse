@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import { createStackNavigator } from '@react-navigation/stack';
-import StudentSidebar from '../student/Dashboard/sidebar';
+import StudentSidebar from '../student/Dashboard/Sidebar';
 import Sidebar from '../Parent/Dashboard/sidebar';
 import CommitteeSidebar from '../Committe/Dashboard/CommitteeSidebar';
 import TeacherSidebar from '../Teacher/Dashboard/sidebar';

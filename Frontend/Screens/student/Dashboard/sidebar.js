@@ -1,14 +1,4 @@
 // Sidebar.js
-// ─────────────────────────────────────────────────────────────────────────────
-// Universal sidebar — React Native (iOS / Android) + react-native-web
-// • Mobile  : hamburger top-left → drawer slides in FROM THE LEFT
-// • Desktop : sidebar always visible (no hamburger)
-//
-// Dependencies:
-//   • react-native / react-native-web
-//   • react-native-svg  →  npx expo install react-native-svg
-// ─────────────────────────────────────────────────────────────────────────────
-
 import React, { useState, useRef } from "react";
 import {
   View,
@@ -20,7 +10,6 @@ import {
   Dimensions,
   Modal,
   Animated,
-  StatusBar,
 } from "react-native";
 import Svg, { Rect, Path, Line, Circle } from "react-native-svg";
 import Dashboard      from "./Dashboardpage";
@@ -30,15 +19,14 @@ import Ranking        from "../Ranking/score";
 import Fees           from "../Fees/fees";
 import Studymaterials from "../Studymaterials/studymaterial";
 import Profile        from "../Profile/profile";
-import Feedback       from "../Feedback/feedback"; 
-import Setting        from "../Setting/setting";  
+import Feedback       from "../Feedback/feedback";
+import Setting        from "../Setting/setting";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const SIDEBAR_WIDTH = 240;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IS_MOBILE = SCREEN_WIDTH <= 768;
-const ANDROID_STATUSBAR_HEIGHT = Platform.OS === "android" ? (StatusBar.currentHeight || 0) : 0;
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
@@ -52,6 +40,12 @@ const T = {
   ink:         "#1a1a2e",
   white:       "#ffffff",
   overlay:     "rgba(0,0,0,0.45)",
+  red:         "#ef4444",
+  redLight:    "#fff5f5",
+  redBorder:   "#ffe4e4",
+  redIcon:     "#ffe4e4",
+  subText:     "#6e6e8a",
+  cardBg:      "#f9f9ff",
 };
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -68,6 +62,23 @@ const CloseIcon = ({ color = T.gray }) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Line x1="18" y1="6"  x2="6"  y2="18" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
     <Line x1="6"  y1="6"  x2="18" y2="18" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+  </Svg>
+);
+
+const LogoutIcon = ({ color = T.red }) => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    />
+    <Path
+      d="M16 17l5-5-5-5"
+      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    />
+    <Line
+      x1="21" y1="12" x2="9" y2="12"
+      stroke={color} strokeWidth="2" strokeLinecap="round"
+    />
   </Svg>
 );
 
@@ -167,9 +178,219 @@ const NAV_ITEMS = [
   { id: "settings",   label: "Settings",       Icon: NavIcons.Settings   },
 ];
 
-// ─── Sidebar panel (shared by mobile drawer + desktop) ───────────────────────
+// ─── Logout Confirmation Modal ────────────────────────────────────────────────
 
-const SidebarPanel = ({ activeId, onItemPress, onClose, isMobile }) => (
+const LogoutConfirmModal = ({ visible, onConfirm, onCancel }) => {
+  const scaleAnim   = useRef(new Animated.Value(0.88)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue:         1,
+          tension:         72,
+          friction:        10,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue:         1,
+          duration:        210,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue:         0.88,
+          duration:        180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue:         0,
+          duration:        180,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onCancel}
+    >
+      {/* Dim backdrop — tap outside to cancel */}
+      <TouchableOpacity
+        style={modalStyles.backdrop}
+        activeOpacity={1}
+        onPress={onCancel}
+        accessibilityLabel="Cancel logout"
+      />
+
+      {/* Centred card */}
+      <View style={modalStyles.centreWrapper} pointerEvents="box-none">
+        <Animated.View
+          style={[
+            modalStyles.card,
+            { transform: [{ scale: scaleAnim }], opacity: opacityAnim },
+          ]}
+        >
+          {/* Icon badge */}
+          <View style={modalStyles.iconBadge}>
+            <LogoutIcon color={T.red} />
+          </View>
+
+          {/* Title */}
+          <Text style={modalStyles.title}>Confirm Logout</Text>
+
+          {/* Message */}
+          <Text style={modalStyles.message}>
+            Are you sure you want to log out of your account?
+          </Text>
+
+          {/* Thin divider */}
+          <View style={modalStyles.divider} />
+
+          {/* Action buttons */}
+          <View style={modalStyles.btnRow}>
+
+            {/* Cancel */}
+            <TouchableOpacity
+              style={[modalStyles.btn, modalStyles.cancelBtn]}
+              activeOpacity={0.75}
+              onPress={onCancel}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+            >
+              <Text style={modalStyles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+
+            {/* Confirm logout */}
+            <TouchableOpacity
+              style={[modalStyles.btn, modalStyles.confirmBtn]}
+              activeOpacity={0.75}
+              onPress={onConfirm}
+              accessibilityLabel="Confirm logout"
+              accessibilityRole="button"
+            >
+              <Text style={modalStyles.confirmBtnText}>Logout</Text>
+            </TouchableOpacity>
+
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+const modalStyles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(15, 15, 35, 0.48)",
+  },
+  centreWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems:     "center",
+    justifyContent: "center",
+    pointerEvents:  "box-none",
+  },
+  card: {
+    width:             Math.min(SCREEN_WIDTH - 48, 330),
+    backgroundColor:   T.white,
+    borderRadius:      20,
+    paddingTop:        28,
+    paddingBottom:     24,
+    paddingHorizontal: 24,
+    alignItems:        "center",
+    ...Platform.select({
+      ios:     { shadowColor: "#1a1a2e", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.13, shadowRadius: 24 },
+      android: { elevation: 16 },
+      web:     { boxShadow: "0 8px 40px rgba(26,26,46,0.13)" },
+    }),
+  },
+
+  iconBadge: {
+    width:           56,
+    height:          56,
+    borderRadius:    16,
+    backgroundColor: T.redLight,
+    borderWidth:     1.5,
+    borderColor:     T.redBorder,
+    alignItems:      "center",
+    justifyContent:  "center",
+    marginBottom:    16,
+  },
+
+  title: {
+    fontSize:      17,
+    fontWeight:    "700",
+    color:         T.ink,
+    letterSpacing: -0.4,
+    marginBottom:  8,
+    ...Platform.select({ web: { fontFamily: "'DM Sans', sans-serif" } }),
+  },
+  message: {
+    fontSize:     13.5,
+    color:        T.subText,
+    textAlign:    "center",
+    lineHeight:   20,
+    fontWeight:   "400",
+    marginBottom: 20,
+    ...Platform.select({ web: { fontFamily: "'DM Sans', sans-serif" } }),
+  },
+
+  divider: {
+    width:           "100%",
+    height:          1,
+    backgroundColor: T.borderSoft,
+    marginBottom:    20,
+  },
+
+  btnRow: {
+    flexDirection: "row",
+    gap:           10,
+    width:         "100%",
+  },
+  btn: {
+    flex:            1,
+    paddingVertical: 13,
+    borderRadius:    12,
+    alignItems:      "center",
+    justifyContent:  "center",
+  },
+
+  cancelBtn: {
+    backgroundColor: T.cardBg,
+    borderWidth:     1,
+    borderColor:     T.border,
+  },
+  cancelBtnText: {
+    fontSize:   14,
+    fontWeight: "600",
+    color:      T.ink,
+    ...Platform.select({ web: { fontFamily: "'DM Sans', sans-serif" } }),
+  },
+
+  confirmBtn: {
+    backgroundColor: T.red,
+    borderWidth:     1,
+    borderColor:     "#dc2626",
+  },
+  confirmBtnText: {
+    fontSize:   14,
+    fontWeight: "700",
+    color:      T.white,
+    ...Platform.select({ web: { fontFamily: "'DM Sans', sans-serif" } }),
+  },
+});
+
+// ─── Sidebar Panel ────────────────────────────────────────────────────────────
+
+const SidebarPanel = ({ activeId, onItemPress, onClose, onLogout, isMobile }) => (
   <View style={styles.sidebarPanel}>
 
     {/* Logo row */}
@@ -224,75 +445,95 @@ const SidebarPanel = ({ activeId, onItemPress, onClose, isMobile }) => (
       })}
     </ScrollView>
 
-    {/* User footer */}
-    <TouchableOpacity style={styles.userRow} activeOpacity={0.7}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>AJ</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.userName}>Alex Johnson</Text>
-        <Text style={styles.userId}>ID: EDU-2024-089</Text>
-      </View>
-    </TouchableOpacity>
+    {/* Logout button */}
+    <View style={styles.logoutSection}>
+      <View style={styles.logoutDivider} />
+      <TouchableOpacity
+        style={styles.logoutBtn}
+        activeOpacity={0.75}
+        onPress={onLogout}
+        accessibilityLabel="Logout"
+        accessibilityRole="button"
+      >
+        <View style={styles.logoutIconBox}>
+          <LogoutIcon color={T.red} />
+        </View>
+        <Text style={styles.logoutLabel}>Logout</Text>
+      </TouchableOpacity>
+    </View>
 
   </View>
 );
 
-// ─── Main export ──────────────────────────────────────────────────────────────
+// ─── Main Export ──────────────────────────────────────────────────────────────
 
-export default function Sidebar({ onNavigate }) {
-  const [activeId,     setActiveId]     = useState("dashboard");
-  const [modalVisible, setModalVisible] = useState(false);
+export default function Sidebar({ onNavigate, navigation }) {
+  const [activeId,           setActiveId]           = useState("dashboard");
+  const [modalVisible,       setModalVisible]       = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
-  // starts fully off-screen to the LEFT (-SIDEBAR_WIDTH), slides to 0
-  const slideX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+  const slideX   = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // ── Open ────────────────────────────────────────────────────────────────
+  // ── Drawer open ──────────────────────────────────────────────────────────
   const openDrawer = () => {
     setModalVisible(true);
-    // Small delay ensures the Modal has mounted before we animate
     setTimeout(() => {
       Animated.parallel([
-        Animated.timing(slideX, {
-          toValue:         0,          // slide to x = 0 (fully visible on left)
-          duration:        270,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue:         1,
-          duration:        270,
-          useNativeDriver: true,
-        }),
+        Animated.timing(slideX,   { toValue: 0, duration: 270, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 270, useNativeDriver: true }),
       ]).start();
     }, 10);
   };
 
-  // ── Close ───────────────────────────────────────────────────────────────
+  // ── Drawer close ─────────────────────────────────────────────────────────
   const closeDrawer = (afterClose) => {
     Animated.parallel([
-      Animated.timing(slideX, {
-        toValue:         -SIDEBAR_WIDTH,  // slide back off-screen to the left
-        duration:        230,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue:         0,
-        duration:        230,
-        useNativeDriver: true,
-      }),
+      Animated.timing(slideX,   { toValue: -SIDEBAR_WIDTH, duration: 230, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0,              duration: 230, useNativeDriver: true }),
     ]).start(() => {
       setModalVisible(false);
       afterClose?.();
     });
   };
 
+  // ── Nav item pressed ─────────────────────────────────────────────────────
   const handleNavPress = (id) => {
     setActiveId(id);
     onNavigate?.(id);
     if (IS_MOBILE) closeDrawer();
   };
 
+  // ── Step 1 — logout button tapped → show confirmation ───────────────────
+  const handleLogoutPress = () => {
+    if (IS_MOBILE) {
+      // Close the drawer first so two overlapping modals don't stack
+      closeDrawer(() => setLogoutModalVisible(true));
+    } else {
+      setLogoutModalVisible(true);
+    }
+  };
+
+  // ── Step 2a — confirmed → reset navigation stack to Login ───────────────
+  const handleLogoutConfirm = () => {
+    setLogoutModalVisible(false);
+
+    if (navigation) {
+      // Resets the stack so back-button cannot return to the portal
+      navigation.reset({
+        index:  0,
+        routes: [{ name: "Login" }],
+      });
+    } else {
+      // Fallback: replace with your own auth/navigation logic
+      console.warn("Logout confirmed — no navigation prop provided. Wire up your own logic here.");
+    }
+  };
+
+  // ── Step 2b — cancelled → just close modal ──────────────────────────────
+  const handleLogoutCancel = () => setLogoutModalVisible(false);
+
+  // ── Screen renderer ──────────────────────────────────────────────────────
   const renderScreen = () => {
     switch (activeId) {
       case "study":      return <Studymaterials />;
@@ -307,17 +548,15 @@ export default function Sidebar({ onNavigate }) {
     }
   };
 
-  // ══════════════════════════════════════════════
-  // MOBILE
-  // ══════════════════════════════════════════════
+  // ════════════════════════════════════════════════
+  // MOBILE layout
+  // ════════════════════════════════════════════════
   if (IS_MOBILE) {
     return (
       <View style={{ flex: 1 }}>
 
-        {/* Header */}
+        {/* Top header bar */}
         <View style={styles.mobileHeader}>
-
-          {/* ── HAMBURGER — three bars TouchableOpacity ── */}
           <TouchableOpacity
             onPress={openDrawer}
             activeOpacity={0.7}
@@ -327,7 +566,6 @@ export default function Sidebar({ onNavigate }) {
           >
             <HamburgerIcon color={T.purple} />
           </TouchableOpacity>
-
           <Text style={styles.headerTitle}>UniVerse</Text>
           <View style={{ width: 44 }} />
         </View>
@@ -337,15 +575,15 @@ export default function Sidebar({ onNavigate }) {
           {renderScreen()}
         </ScrollView>
 
-        {/* ── LEFT-SLIDE DRAWER ── */}
+        {/* Left-slide drawer */}
         <Modal
           visible={modalVisible}
           transparent
-          animationType="none"        // ← must be "none" — we do the animation
+          animationType="none"
           statusBarTranslucent
           onRequestClose={() => closeDrawer()}
         >
-          {/* Animated dark backdrop — tap to close */}
+          {/* Backdrop */}
           <Animated.View
             style={[StyleSheet.absoluteFill, styles.backdrop, { opacity: fadeAnim }]}
             pointerEvents="box-none"
@@ -358,39 +596,55 @@ export default function Sidebar({ onNavigate }) {
             />
           </Animated.View>
 
-          {/* Panel slides in from left: translateX goes -240 → 0 */}
+          {/* Sliding panel */}
           <Animated.View
-            style={[
-              styles.drawerContainer,
-              { transform: [{ translateX: slideX }] },
-            ]}
+            style={[styles.drawerContainer, { transform: [{ translateX: slideX }] }]}
           >
             <SidebarPanel
               activeId={activeId}
               onItemPress={handleNavPress}
               onClose={() => closeDrawer()}
+              onLogout={handleLogoutPress}
               isMobile
             />
           </Animated.View>
         </Modal>
 
+        {/* Logout confirmation — rendered outside the drawer modal to avoid stacking */}
+        <LogoutConfirmModal
+          visible={logoutModalVisible}
+          onConfirm={handleLogoutConfirm}
+          onCancel={handleLogoutCancel}
+        />
+
       </View>
     );
   }
 
-  // ══════════════════════════════════════════════
-  // DESKTOP — always-visible sidebar
-  // ══════════════════════════════════════════════
+  // ════════════════════════════════════════════════
+  // DESKTOP / TABLET — always-visible sidebar
+  // ════════════════════════════════════════════════
   return (
     <View style={{ flex: 1, flexDirection: "row" }}>
+
       <SidebarPanel
         activeId={activeId}
         onItemPress={handleNavPress}
+        onLogout={handleLogoutPress}
         isMobile={false}
       />
+
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {renderScreen()}
       </ScrollView>
+
+      {/* Logout confirmation modal */}
+      <LogoutConfirmModal
+        visible={logoutModalVisible}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
+
     </View>
   );
 }
@@ -399,13 +653,13 @@ export default function Sidebar({ onNavigate }) {
 
 const styles = StyleSheet.create({
 
-  // Mobile header
+  // ── Mobile header ──────────────────────────────────────────────────────
   mobileHeader: {
     flexDirection:     "row",
     alignItems:        "center",
     justifyContent:    "space-between",
     backgroundColor:   T.white,
-    paddingTop:        Platform.select({ ios: 52, android: ANDROID_STATUSBAR_HEIGHT + 10, default: 16 }),
+    paddingTop:        Platform.select({ ios: 52, android: 28, default: 16 }),
     paddingBottom:     12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
@@ -418,7 +672,6 @@ const styles = StyleSheet.create({
     }),
   },
 
-  // Hamburger button (three bars)
   hamburgerBtn: {
     width:           44,
     height:          44,
@@ -435,17 +688,16 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
-  // Backdrop
+  // ── Drawer / overlay ───────────────────────────────────────────────────
   backdrop: {
     backgroundColor: T.overlay,
     zIndex: 1,
   },
 
-  // The animated drawer panel — starts off-screen left, slides to x=0
   drawerContainer: {
     position: "absolute",
     top:      0,
-    left:     0,          // anchored to left edge
+    left:     0,
     bottom:   0,
     width:    SIDEBAR_WIDTH,
     zIndex:   2,
@@ -456,17 +708,18 @@ const styles = StyleSheet.create({
     }),
   },
 
-  // Sidebar panel body
+  // ── Sidebar panel (shared by mobile drawer + desktop) ──────────────────
   sidebarPanel: {
     flex:             1,
+    width:            IS_MOBILE ? undefined : SIDEBAR_WIDTH,
     backgroundColor:  T.white,
-    paddingTop:       Platform.select({ ios: 52, android: ANDROID_STATUSBAR_HEIGHT + 10, default: 24 }),
+    paddingTop:       Platform.select({ ios: 52, android: 28, default: 24 }),
     paddingBottom:    20,
     borderRightWidth: 1,
     borderRightColor: T.border,
   },
 
-  // Logo
+  // ── Logo row ───────────────────────────────────────────────────────────
   logoRow: {
     flexDirection:     "row",
     alignItems:        "center",
@@ -511,8 +764,9 @@ const styles = StyleSheet.create({
     marginLeft:      6,
   },
 
-  // Nav
+  // ── Nav list ───────────────────────────────────────────────────────────
   navScroll: { flex: 1 },
+
   navItem: {
     flexDirection:     "row",
     alignItems:        "center",
@@ -524,7 +778,9 @@ const styles = StyleSheet.create({
     borderRightWidth: 3,
     borderRightColor: T.purple,
   },
+
   iconWrap: { marginRight: 12 },
+
   navLabel: {
     flex:       1,
     fontSize:   13.5,
@@ -532,27 +788,46 @@ const styles = StyleSheet.create({
     color:      T.gray,
     ...Platform.select({ web: { fontFamily: "'DM Sans', sans-serif", userSelect: "none" } }),
   },
-  navLabelActive: { color: T.purple, fontWeight: "700" },
+  navLabelActive: {
+    color:      T.purple,
+    fontWeight: "700",
+  },
 
-  // Footer
-  userRow: {
+  // ── Logout section ─────────────────────────────────────────────────────
+  logoutSection:  { paddingBottom: 8 },
+
+  logoutDivider: {
+    height:           1,
+    backgroundColor:  T.borderSoft,
+    marginHorizontal: 16,
+    marginBottom:     12,
+  },
+
+  logoutBtn: {
     flexDirection:     "row",
     alignItems:        "center",
-    paddingHorizontal: 20,
-    paddingTop:        16,
-    borderTopWidth:    1,
-    borderTopColor:    T.borderSoft,
+    marginHorizontal:  12,
+    paddingVertical:   11,
+    paddingHorizontal: 12,
+    borderRadius:      12,
+    backgroundColor:   T.redLight,
+    borderWidth:       1,
+    borderColor:       T.redBorder,
   },
-  avatar: {
+  logoutIconBox: {
     width:           34,
     height:          34,
-    borderRadius:    17,
-    backgroundColor: T.purple,
+    borderRadius:    9,
+    backgroundColor: T.redIcon,
     alignItems:      "center",
     justifyContent:  "center",
-    marginRight:     10,
+    marginRight:     12,
   },
-  avatarText: { color: T.white, fontWeight: "700", fontSize: 12 },
-  userName:   { fontSize: 12.5, fontWeight: "700", color: T.ink },
-  userId:     { fontSize: 10.5, color: T.grayLight },
+  logoutLabel: {
+    fontSize:      13.5,
+    fontWeight:    "600",
+    color:         T.red,
+    letterSpacing: 0.1,
+    ...Platform.select({ web: { fontFamily: "'DM Sans', sans-serif", userSelect: "none" } }),
+  },
 });
